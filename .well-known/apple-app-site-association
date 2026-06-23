@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "XGLHMG3629.com.matthewschwartz.manna",
+        "paths": [ "/c/*", "/d/*" ]
+      }
+    ]
+  }
+}

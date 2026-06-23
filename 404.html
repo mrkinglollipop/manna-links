@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Manna — get the app to play</title>
+  <meta name="description" content="Open this challenge in Manna, a daily biblical Connections puzzle.">
+  <meta property="og:title" content="A Manna challenge is waiting">
+  <meta property="og:description" content="Get Manna — a daily biblical Connections puzzle — to open this challenge.">
+  <meta property="og:type" content="website">
+  <!--
+    GitHub Pages serves this file (with a 404 status) for any path that has no
+    matching file, e.g. /c/<code> and /d/<dayKey>. When the app is installed,
+    iOS intercepts the universal link before Safari ever loads this page, so this
+    is only reached by visitors WITHOUT the app — send them to the App Store.
+    We do NOT attempt the mannapuzzle:// scheme here: with no app installed it
+    triggers an ugly "cannot open" alert, and with the app installed we never run.
+  -->
+  <style>
+    :root { --parchment:#FAF5E8; --ink:#2E261A; --gold:#E7C54A; --muted:#6B6048; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      background: var(--parchment); color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100%; padding: 2rem; text-align: center;
+    }
+    .card { max-width: 30rem; }
+    .wordmark {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(3rem, 16vw, 5rem); font-weight: 700;
+      letter-spacing: 0.01em; margin: 0;
+    }
+    .tag { font-size: 1.1rem; color: var(--muted); margin: 0.5rem 0 2rem; }
+    .cta {
+      display: inline-block; background: var(--ink); color: var(--parchment);
+      text-decoration: none; font-weight: 600; font-size: 1.05rem;
+      padding: 0.85rem 1.6rem; border-radius: 999px;
+    }
+    .cta:active { opacity: 0.85; }
+    .note { font-size: 0.9rem; color: var(--muted); margin-top: 1.5rem; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1 class="wordmark">Manna</h1>
+    <p class="tag">A friend invited you to a challenge.</p>
+    <a class="cta" id="store" href="https://apps.apple.com/app/manna/id6782489046">Get Manna to play</a>
+    <p class="note">Taking you to the App Store…</p>
+  </main>
+  <script>
+    // Non-app visitors only (see comment above). Send them to the App Store.
+    setTimeout(function () {
+      window.location.replace("https://apps.apple.com/app/manna/id6782489046");
+    }, 1200);
+  </script>
+</body>
+</html>
