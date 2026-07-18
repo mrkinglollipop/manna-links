@@ -4,7 +4,12 @@
     "details": [
       {
         "appID": "XGLHMG3629.com.matthewschwartz.manna",
-        "paths": [ "/c/*", "/d/*", "/g/*" ]
+        "paths": [
+          "/c/*",
+          "/d/*",
+          "/g/*",
+          "/f/*"
+        ]
       }
     ]
   }
