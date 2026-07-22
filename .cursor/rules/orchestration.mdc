@@ -32,6 +32,7 @@ Otherwise → **hire**. When unsure → **hire**.
 - Broad codebase find / locate files or symbols without a walkthrough → `explore` (readonly)
 - “why was X designed…” / why is *our* code shaped this way → `why` skill
 - “why does the industry / library / market / framework do X?” (no workspace code anchor) → `research` (or `web-search` for a single lookup) — **not** `why`
+- **825 — Web-research hire floor:** ≥3 consecutive `web_search` / `web_fetch` (or skill equivalents) toward one research goal with no intervening hire/dispatch for that goal → stop grinding inline; dispatch `research` / `web-search`. A single concrete lookup may stay inline.
 - “blast radius / what else breaks” / small-looking refactor safety → `blast-radius` skill
 - Native / Electron verify → `ios-oracle` / `electron-oracle`
 - Research gather/deep → `research`
@@ -39,6 +40,8 @@ Otherwise → **hire**. When unsure → **hire**.
 - Session audit / `/myauditandfix` → dual `session-auditor` (ROLE=bug_hunt + ROLE=claim_bust, `TRACK=session`) + `audit-verifier` confirm, then fix verifier when authorized in the **same turn** (no Matt ack between §4 report and Phase 2); loop max **4** rounds; after every Phase 2, **mandatory** post-fix re-audit in the **same turn** (`NEW_HIGH_FROM_FIX` and whether the prior confirm had any HIGH choose full vs `DELTA_CHECK` only when prior confirm had zero HIGH — never skips re-audit / never equals green)
 - Plan verify / `/verify-plan` → dual `session-auditor` (`TRACK=plan`) + `audit-verifier` confirm, then plan-only fix verifier when authorized in the **same turn** (same pipeline + round/delta rules as myaudit; plan-doc write allowlist only; full re-audit until prior confirm returns zero HIGH)
 - Parallel independent legs → **multiple Task calls in one turn**
+
+**37 — Honor named skill/tool:** When Matt names a specific skill/tool, invoke that skill/tool first this turn (do not wrap in a generic Task that may ignore it). Default: hire still applies when no skill/tool is named.
 
 Do **not** balloon this thread with work a teammate should own.
 
@@ -56,7 +59,7 @@ Orchestrator may pin Task `model` **only** from Matt's allowlist:
 
 - `composer-2.5` · `composer-2.5-fast`
 - `cursor-grok-4.5-low` · `cursor-grok-4.5-medium` · `cursor-grok-4.5-high` · `cursor-grok-4.5-xhigh`
-- `k3` (Kimi — audit adjudicator / when Task enum exposes it)
+- `k3` (Kimi — global Task allowlist when product exposes; **not** an adjudicator pin)
 
 **Effort = slug suffix** (Task has no separate `effort` field). Pick Grok effort by task hardness — light scout → `low`/`medium`; hard multi-step → `high`/`xhigh`. Do not default every pin to `xhigh`. Never bare `grok-4.5-*` (product remaps to Fast).
 
@@ -64,7 +67,7 @@ Orchestrator may pin Task `model` **only** from Matt's allowlist:
 
 **Must pin allowlisted model for browser/tool-schema-heavy Tasks when parent may be Moonshot/Kimi/Auto-unknown** (Grok or Composer; do not omit). Moonshot/Kimi can reject Cursor tool JSON Schema on inherit (`completed_subtitle.$ref` / `#/$defs/`). **Default light browser pin:** `cursor-grok-4.5-medium`. Prefer in-thread browser MCP (`cursor-ide-browser`) over a browser Task when available.
 
-**Audit pipeline carve-out (HARD):** `session-auditor` **must** pin `composer-2.5-fast` (omit denied). `audit-verifier` (confirm + fix) allows **only** `cursor-grok-4.5-high`, `k3`, or **omit** `model` — never Composer, never other Grok efforts. Dispatch order: pin high when Task accepts it → else pin `k3` → else omit (frontmatter `cursor-grok-4.5-high` or Auto/K3 parent inherit). If neither Grok nor K3 lands → **STOP** (no Composer soft-fallback; do not kill-switch for enum gaps). Hook enforces this for native types **and** for `generalPurpose` / `explore` / missing-type escape-hatch prompts that are audit-shaped (`ROLE=bug_hunt|claim_bust`, `fix_authorized=false|true`, or reading `session-auditor.md`/`audit-verifier.md` — not bare `TRACK=` + agent name alone). Do **not** imply a mechanical pin without the hook (fail-open / kill switch).
+**Audit pipeline carve-out (HARD):** `session-auditor` **must** pin `composer-2.5-fast` (omit denied). `audit-verifier` (confirm + fix) allows **only** **omit** `model` or `cursor-grok-4.5-high` — never Composer, never k3 as an adjudicator pin, never other Grok efforts. **Default: omit** (frontmatter `cursor-grok-4.5-high` backs omit under Auto). Optional pin high ONLY when a prior Task in **this conversation transcript** landed with explicit `model: cursor-grok-4.5-high` without product deny / "Couldn't start"; if unsure → omit; never-first-under-Auto. On pin deny: retry omit once; never k3; never Composer. If omit cannot run / wrong inherit → **STOP** (no Composer soft-fallback; do not kill-switch for enum gaps). Hook enforces this for native types **and** for `generalPurpose` / `explore` / missing-type escape-hatch prompts that are audit-shaped (`ROLE=bug_hunt|claim_bust`, `fix_authorized=false|true`, or reading `session-auditor.md`/`audit-verifier.md` — not bare `TRACK=` + agent name alone). Do **not** imply a mechanical pin without the hook (fail-open / kill switch).
 
 **Agent frontmatter is separate** for non-audit specialists (e.g. `art-vision` → `gemini-3-1-pro`) — prefer omit Task `model` there when parent is known allowlisted and the Task is not browser/tool-schema-heavy. Frontmatter prefer-omit must **not** override the tool-schema carve-out above. Audit-verifier frontmatter `cursor-grok-4.5-high` backs omit under Auto. No new frontmatter pin campaign.
 
@@ -72,7 +75,7 @@ Kill switch: `touch /tmp/.cursor_task_model_allowlist_disable`.
 
 ## If a custom agent is invoked
 
-1. Prefer omit Task `model` when parent is known allowlisted and Task is not browser/tool-schema-heavy — **except** `session-auditor` (must pin composer-2.5-fast). For `audit-verifier`, follow adjudicator order (high → k3 → omit). If parent may be Moonshot/Kimi/Auto-unknown and Task needs tool schemas (non-audit), pin an allowlisted model (default light browser: `cursor-grok-4.5-medium`). If pinning, allowlist only (above). Agent **frontmatter** as already authored for non-audit agents (must not override the tool-schema carve-out).
+1. Prefer omit Task `model` when parent is known allowlisted and Task is not browser/tool-schema-heavy — **except** `session-auditor` (must pin composer-2.5-fast). For `audit-verifier`, follow omit-first (omit default; optional `cursor-grok-4.5-high` only if this transcript already saw Task accept that pin; on deny retry omit once; never k3; never Composer). If parent may be Moonshot/Kimi/Auto-unknown and Task needs tool schemas (non-audit), pin an allowlisted model (default light browser: `cursor-grok-4.5-medium`). If pinning, allowlist only (above). Agent **frontmatter** as already authored for non-audit agents (must not override the tool-schema carve-out).
 2. Custom `subagent_type` missing from the Task enum → `generalPurpose` / `explore` + read `.cursor/agents/<name>.md` (escape hatch only — not a routing table). **Escape hatch must still use** the same audit model rules; `task_model_allowlist` enforces critic/verifier pins on audit-shaped `generalPurpose` / `explore` / missing-type prompts too.
 
 ## Oracle (HARD)
