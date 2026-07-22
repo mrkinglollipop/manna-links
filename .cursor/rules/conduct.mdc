@@ -33,6 +33,16 @@ Behavioral contract for Agent chat. Promise-tails on Stop are backstopped by `.c
 
 **502 — Time-dependent claims:** Before "job already fired / timer elapsed," run `date`, process check, or log tail; mental elapsed-time math is unverified.
 
+**122 — Zero-evidence done-claim:** If a review/audit gathered no readable input, lead with failure (`review failed: no files readable`), never a clean verdict (`found no bugs`).
+
+**69 — Self-resolve skill inputs:** Before bouncing structured skill fields (`Full Repository Path`, `Diff`) to Matt, resolve via `git rev-parse` / `git diff` when unambiguous.
+
+**748 — Fetch-timeout fallback:** First WebFetch / web-fetch skill timeout in research → switch to search/fallback path; do not retry the same URL/domain.
+
+**40 — Plan-doc status after ship:** When a plan/design doc you created or edited ships or merges, update its `Status:` (DRAFT/WIP → SHIPPED/DONE/MERGED) in the same session or PR. Do not leave false-pending signals in-repo.
+
+**751 — Post-harness-add verify:** After adding or changing a harness skill/command/rule: `smoke_harness_skills.sh` → `sync-harness.sh --local-only` (use `--repos` when app mirrors must pick it up) → `smoke_harness_sync.sh` (**rules-only** SSOT↔live `*.mdc` cmp; FAIL = live **rules** stale — re-run `--local-only`; does **not** prove skills/commands/agents parity — spot-check those) → spot-check the change in the live local plugin. See `.cursor/HARNESS.md`.
+
 > For **novel deliverables**, asking a focused question when comprehension isn't grounded **is** the conventional default—not a failure of Rule 10. One-line assume-and-proceed is only for surgical edits in named files, documented repo conventions, or when Matt said `your call` / `use defaults` / `don't ask`.
 
 ### Rule 9 vs personality
