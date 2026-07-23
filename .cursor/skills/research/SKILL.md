@@ -79,9 +79,25 @@ Gitignored `scripts/deep_research/deep_research_config.local.yaml` merges over p
 
 ## Format knobs (deep)
 
-Pass through to `run.py`: `--format`, `--citation-style`, `--sections`, `--visual-level`.
+Pass through to `run.py`: `--format`, `--citation-style`, `--sections`, `--visual-level`, `--search-topic`, `--context`.
 
 Supported formats: `briefing_memo`, `literature_review`, `pros_cons`, `how_to`, `scholarly`.
+
+## Deep query hygiene (HARD)
+
+- **`--query`:** research question (may be longer).
+- **`--search-topic`:** short keywords / model names for Tavily/relevance (≪350 chars). If omitted, `run.py` extracts from `--query` (first paragraph / sentence, ≤200).
+- **`--context`:** synth/adjudicate-only (already-tried, stack, VRAM, licenses). **Never** prefix into Tavily search strings.
+- **One** `run.py` per deep dispatch — no salvage re-runs that rewrite truncated slugs unless orchestrator re-dispatches after a harness fix.
+- **Fail-closed:** empty sources or provider error → `ok: false` + `## Blocked` stub. Agent handoff **Status: BLOCKED**. Orchestrator must **not** relay the stub as a literature review.
+- Always `required_permissions: ["full_network"]` on the first provider/LLM Shell (no sandbox retry cosplay).
+
+## Gather guardrails (docs-only; acceptance = SSOT + post-sync spot-check; no hook)
+
+- When the brief is “what’s new for stack X,” search **competing families / adjacent releases**, not only the named stack.
+- Before “try next” ROI pitches: check Memory topics / prompt exclusions for **already tried**; exclude those.
+- Prefer listed primary URLs (Firecrawl scrape) over broad search when provided; keep any Tavily query ≤~100–200 chars.
+- Cap remains 5 paid calls; free HF raw / GitHub HTTP OK for licenses when paid budget is spent.
 
 ## Dispatch
 
@@ -89,17 +105,17 @@ Supported formats: `briefing_memo`, `literature_review`, `pros_cons`, `how_to`, 
 Task(subagent_type: "research", readonly: true, run_in_background: <true only for deep>)
 ```
 
-Prompt must include: `mode`, `query`, and for deep: `preset`, `profile` (post-AskQuestion).
+Prompt must include: `mode`, `query`, and for deep: `preset`, `profile` (post-AskQuestion). Prefer also `search-topic` + `context` for deep production briefs.
 
 **Gather:** foreground, max 5 paid provider calls; agent returns sources + short synthesis + conflicts; **orchestrator relays** Lane A to Matt.
 
-**Deep:** background; relay `outputs/research/<slug>.md` excerpt Lane B.
+**Deep:** background; relay `outputs/research/<slug>.md` excerpt Lane B **only when `ok: true`**. On BLOCKED stub, report blocker — do not pitch as a literature review.
 
 ## YouTube cues
 
 - YouTube URL in query → metadata via `videos.list` (1 quota unit), skip search
 - Video/tutorial intent → `search_videos` once per gather (100 units); transcripts for top 5 (free)
-- Deep pipeline includes YouTube in `web_context.py` when relevant
+- Deep pipeline always calls YouTube via `web_context.py` (supplemental; soft when Tavily salvage exists)
 
 ## X / Twitter (deferred)
 
