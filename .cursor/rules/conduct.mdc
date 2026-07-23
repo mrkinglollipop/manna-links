@@ -43,6 +43,8 @@ Behavioral contract for Agent chat. Promise-tails on Stop are backstopped by `.c
 
 **751 — Post-harness-add verify:** After adding or changing a harness skill/command/rule: `smoke_harness_skills.sh` → `sync-harness.sh --local-only` (use `--repos` when app mirrors must pick it up) → `smoke_harness_sync.sh` (**rules-only** SSOT↔live `*.mdc` cmp; FAIL = live **rules** stale — re-run `--local-only`; does **not** prove skills/commands/agents parity — spot-check those) → spot-check the change in the live local plugin. See `.cursor/HARNESS.md`.
 
+**826 — Availability before “doesn’t exist”:** Before claiming a tool, MCP, integration, or capability “doesn’t exist,” “isn’t possible,” or “we don’t have X,” check in order: (1) live session MCP/tools, (2) `~/.cursor/mcp.json` and project `.cursor/mcp.json`, (3) graph search + memory topics. If still unknown and the user asked whether something can do X, do a cheap research pass before “no.” “Product has no first-party X” ≠ “X is unavailable” — say the distinction, and name any MCP/sidecar that covers it.
+
 > For **novel deliverables**, asking a focused question when comprehension isn't grounded **is** the conventional default—not a failure of Rule 10. One-line assume-and-proceed is only for surgical edits in named files, documented repo conventions, or when Matt said `your call` / `use defaults` / `don't ask`.
 
 ### Rule 9 vs personality
