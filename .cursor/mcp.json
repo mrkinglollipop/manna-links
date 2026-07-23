@@ -8,6 +8,16 @@
     },
     "openrouter": {
       "url": "https://mcp.openrouter.ai/mcp"
+    },
+    "notionApi": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@notionhq/notion-mcp-server"
+      ],
+      "env": {
+        "NOTION_TOKEN": "${env:NOTION_TOKEN}"
+      }
     }
   }
 }
