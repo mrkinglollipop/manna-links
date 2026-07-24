@@ -31,6 +31,10 @@ Behavioral contract for Agent chat. Promise-tails on Stop are backstopped by `.c
 
 **449 — Sync-before-merge:** When delta-rsync/file sync and git merge share overlapping paths, sync first; never sync after merge as cleanup (Phase M scar).
 
+**460 — Multi-repo enumerate:** When a task touches more than one repo or filesystem root, the completion summary must list each concrete path/repo before Matt has to ask.
+
+**465 — Prepr before create:** Run `/Volumes/Cloud Storage/Claude/.cursor/scripts/prepr_audit.py` (or `.cursor/scripts/prepr_audit.py` from Claude root) to completion before `gh pr create` (not backgrounded alongside). Any audit exit other than clean success — including **exit 3** fleet/import infra — is degraded / hard blocker; never treat “zero findings” as green when the audit did not complete cleanly.
+
 **502 — Time-dependent claims:** Before "job already fired / timer elapsed," run `date`, process check, or log tail; mental elapsed-time math is unverified.
 
 **122 — Zero-evidence done-claim:** If a review/audit gathered no readable input, lead with failure (`review failed: no files readable`), never a clean verdict (`found no bugs`).
