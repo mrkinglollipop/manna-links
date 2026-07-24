@@ -49,14 +49,26 @@ Operate in the git repo containing the cwd (`git rev-parse --show-toplevel`). **
 |--------|---------|
 | `/tmp/.cursor_audit_ok_<conversation_id>` | Stop stamped after `Green: Y` (+ Task pipeline evidence when `/myauditandfix` is pending) |
 | `/tmp/.cursor_audit_ok_ws_<workspace>` | Workspace-root fallback OK |
-| Bypass phrases | Matt says `push without audit` / `skip audit` / `bypass push audit` |
+| Bypass phrases | Matt says `push without audit` / `skip audit` / `bypass push audit` as its **own line** (option-list pastes do not stamp) |
 | Kill switch | `touch /tmp/.cursor_push_audit_disable` |
 
-**Live transcript fallback:** `beforeShellExecution` often supplies only `command` + `conversation_id` (no `transcript_path`). The gate **best-effort resolves** the transcript from payload path keys (`transcript_path`, `transcriptPath`, `agent_transcript_path`) or by searching `~/.cursor/projects/*/agent-transcripts/` for `{conversation_id}.jsonl`. When a transcript is found and it already has `Green: Y` and (when myaudit) dual-critic→confirm Task evidence, the gate **allows push and backfills** the OK stamp. Primary mid-ship recovery remains ending a turn with Loop summary `Green: Y` (stop stamp) or a prior-green follow-up — not inventing a bypass.
+**Live transcript fallback:** `beforeShellExecution` often supplies only `command` + `conversation_id` (no `transcript_path`). The gate **best-effort resolves** the transcript from payload path keys (`transcript_path`, `transcriptPath`, `agent_transcript_path`) or by searching `~/.cursor/projects/*/agent-transcripts/` for `{conversation_id}.jsonl`. When a transcript is found and it already has `Green: Y` and (when myaudit) dual-critic→confirm Task evidence, the gate **allows push and backfills** the OK stamp.
 
-**Preflight (before `git push`):** check for OK/bypass markers or expect transcript fallback; if the previous push was denied, stop with **INCOMPLETE** — do not retry push in a loop, do not claim "committed and done."
+**Cloud Agents (`bc-*` conversation ids):** fail-open (allows push + logs `cloud_fail_open`) only when the **primary** `conversation_id` is `bc-*` and no local transcript resolves — private workers never sync transcripts. If `conversation_id` is local/non-`bc-*` and only a secondary id (e.g. `session_id`) is `bc-*`, push still **denies** (hybrid / smoke54). Still prefer an explicit `stamp_ok` after green (below) so WS_OK exists for hybrid local continue.
 
-Preferred recovery: end a turn with Loop summary `Green: Y` after `/myauditandfix`, then re-run `/commitprmerge` (or Matt says `push` / bypass phrase).
+**stamp_ok (after Green: Y):** when stop may miss (cloud / no transcript), orchestrator runs before push. With a real `conversation_id`, `stamp_ok` requires a prior PENDING marker (`/myauditandfix` or `/verify-plan` already invoked); without PENDING it no-ops. Workspace-only stamp (no `conversation_id`) can still mint WS_OK without PENDING by design.
+
+```bash
+python3 "/Volumes/Cloud Storage/Claude/.cursor/hooks/audit_marker.py" stamp_ok <<EOF
+{"conversation_id":"<id if known>","cwd":"$(pwd)","workspace_roots":["$(pwd)"]}
+EOF
+```
+
+Do **not** invent bypass markers. Bypass phrases stamp only when Matt types them as their **own line** (not inside an INCOMPLETE option list).
+
+**Preflight (before `git push`):** check for OK/bypass markers, cloud fail-open, or expect transcript fallback; if the previous push was denied, stop with **INCOMPLETE** — do not retry push in a loop, do not claim "committed and done."
+
+Preferred recovery: end a turn with Loop summary `Green: Y` after `/myauditandfix`, run `stamp_ok` when cloud/no-transcript, then re-run `/commitprmerge` (or Matt says a standalone bypass phrase).
 
 ## What to ship (default scope)
 
@@ -67,7 +79,8 @@ Preferred recovery: end a turn with Loop summary `Green: Y` after `/myauditandfi
 1. **Conversation writes** — every path touched by `Write`, `StrReplace`, or `Delete` in **this thread only** (orchestrator + subagents).
 2. **Session side effects** — paths known to have changed from shell in this thread (e.g. `capture_v2.py` → `/Volumes/Cloud Storage/Memory/conversations/episodes.jsonl` and any `topic_pages` it wrote).
 3. **Intersect with git** — `git status --short`; stage only session-list paths that are modified, added, or untracked. Ignore other dirty files even if present.
-4. **Never stage** even if in the session list: `API Keys/`, `**/.env`, `**/*.pem`, `**/*.key`, `.cursor/mcp.json`, secrets, `_precompact_safety/`, `*.bak*`, build artifacts ignored by `.gitignore` but accidentally forced.
+4. **Never stage** even if in the session list: `API Keys/`, `**/.env`, `**/*.pem`, `**/*.key`, secrets, `_precompact_safety/`, `*.bak*`, build artifacts ignored by `.gitignore` but accidentally forced.
+5. **`.cursor/mcp.json` carve-out:** may stage when in the session list **only if** `python3 .cursor/scripts/mcp_json_is_shippable.py .cursor/mcp.json` (or the Claude workspace copy of that script) exits 0 — URL / `${env:…}` / `<from …>` stubs only. **Abort** if the checker fails (live tokens). Never stage `~/.cursor/mcp.json`.
 
 ### Empty working tree but unpushed commits
 

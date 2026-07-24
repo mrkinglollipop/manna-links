@@ -38,7 +38,7 @@ Every dispatch for a round must include:
 - For verifier step 1: **both critic reports** (bug_hunt + claim_bust) — **unless** `DELTA_CHECK=true`
 - For verifier step 2 only: the confirmed finding list from step 1 (no re-litigating dropped items without new evidence)
 
-**Pin Task `model` on every audit dispatch:** critics → `model: "composer-2.5-fast"` + `readonly: true` (omit denied). Adjudicator (confirm + fix) → **only** `cursor-grok-4.5-high`, `k3`, or **omit** `model`. Order: pin high when Task accepts it → else pin `k3` → else omit (frontmatter Grok-high / Auto+K3 inherit). Never Composer. If neither Grok nor K3 lands → STOP. Escape hatch if Task enum lacks subagent_type: `generalPurpose` / `explore` / missing-type + read `.cursor/agents/<name>.md` with the **same** rules. Never bare `grok-4.5-high` or Grok `*-fast`. Native types preferred.
+**Pin Task `model` on every audit dispatch:** critics → `model: "composer-2.5-fast"` + `readonly: true` (omit denied). Adjudicator (confirm + fix) → **only** **omit** `model` or `cursor-grok-4.5-high`. Never k3 as an adjudicator pin. Never Composer. **Default: omit** (frontmatter Grok-high backs omit under Auto). Optional pin high ONLY when a prior Task in **this conversation transcript** landed with explicit `model: cursor-grok-4.5-high` without product deny / "Couldn't start"; if unsure → omit; never-first-under-Auto. On pin deny: retry omit once; never k3; never Composer. If omit fails → STOP. Escape hatch if Task enum lacks subagent_type: `generalPurpose` / `explore` / missing-type + read `.cursor/agents/<name>.md` with the **same** rules. Never bare `grok-4.5-high` or Grok `*-fast`. Native types preferred.
 
 ## Freshness pass (orchestrator — before dual critics when applicable)
 
@@ -63,7 +63,7 @@ Do **not** edit files during this phase.
 3. **Dual critics (parallel):** dispatch two `session-auditor` Tasks in one turn with **`TRACK=session`**, **`model: "composer-2.5-fast"`**, `readonly: true`:
    - `ROLE=bug_hunt` — correctness, regressions, edge cases, silent failures
    - `ROLE=claim_bust` — chat claims vs evidence, false done, process gaps, **shared freshness items** (stale/false paths, outdated API/version claims, chat "verified" without evidence, scope creep vs thread intent, freshness failures)
-4. **Confirm-only verifier:** dispatch `Task(subagent_type: "audit-verifier", readonly: true)` with `fix_authorized=false`, **`TRACK=session`**, both critic reports — **unless** `DELTA_CHECK=true` — and Freshness oracle notes in the artifact pack. Adjudicator model: high → k3 → omit (never Composer). Dual-mode agent cannot use frontmatter `readonly`; dispatch-level `readonly: true` is the mechanical backstop for confirm-only. Verifier confirms/rejects/dedupes and returns §4-ready payload.
+4. **Confirm-only verifier:** dispatch `Task(subagent_type: "audit-verifier", readonly: true)` with `fix_authorized=false`, **`TRACK=session`**, both critic reports — **unless** `DELTA_CHECK=true` — and Freshness oracle notes in the artifact pack. Adjudicator model: omit-first (omit default; optional `cursor-grok-4.5-high` only if this transcript already saw Task accept that pin; on deny retry omit once; never k3 as an adjudicator pin; never Composer). Dual-mode agent cannot use frontmatter `readonly`; dispatch-level `readonly: true` is the mechanical backstop for confirm-only. Verifier confirms/rejects/dedupes and returns §4-ready payload.
 5. **Optional bugbot:** only when Matt opted in — fold into Findings; does not replace §4.1–§4.3.
 6. Orchestrator surfaces **mandatory report** to Matt in order (from verifier payload + synthesis):
    - **Action summary** (verdict, do now, blocked on Matt, plan status)
@@ -77,7 +77,7 @@ Do **not** edit files during this phase.
 
 ## Phase 2 — Fix (authorized by this command)
 
-1. Dispatch `audit-verifier` with `fix_authorized=true`, **`TRACK=session`**, adjudicator model high → k3 → omit (never Composer), and the **confirmed finding list** from Phase 1 step 1 — fix **only** those findings; no scope creep.
+1. Dispatch `audit-verifier` with `fix_authorized=true`, **`TRACK=session`**, adjudicator model omit-first (omit default; optional `cursor-grok-4.5-high` only if this transcript already saw Task accept that pin; on deny retry omit once; never k3 as an adjudicator pin; never Composer), and the **confirmed finding list** from Phase 1 step 1 — fix **only** those findings; no scope creep.
 2. Orchestrator reviews diff + runs oracle gate. No LOC force-dispatch.
 3. Re-verify each fix via oracle/ledger updates only — **this is not a re-audit**. Fix-agent self-report (`NEW_HIGH_FROM_FIX`, clearance notes) is **input to post-fix mode selection only**; it does **not** authorize **Green: Y**, “zero HIGH/MEDIUM,” or ending the loop.
 
@@ -107,7 +107,7 @@ Run **sequentially** — do not start the next round until the current round's P
 2. **Confirm-only delta check** only when **both**:
    - the **prior confirm** had **zero HIGH**, **and**
    - the fix introduced **no new HIGH** (`NEW_HIGH_FROM_FIX=false`)  
-   → **skip dual critics**. Dispatch one confirm-only `audit-verifier` (`fix_authorized=false`, adjudicator model high → k3 → omit — never Composer; still `readonly: true`) with **`DELTA_CHECK=true`**, fix-touched paths, prior confirmed findings + clearance claims, and fix-round oracle tails. New MEDIUM-only issues do **not** force full re-audit. Delta confirm is still a **real second pass** — clearances are not green until this Task returns zero HIGH/MEDIUM (or stop-early).
+   → **skip dual critics**. Dispatch one confirm-only `audit-verifier` (`fix_authorized=false`, adjudicator model omit-first (omit default; optional `cursor-grok-4.5-high` only if this transcript already saw Task accept that pin; on deny retry omit once; never k3 as an adjudicator pin; never Composer; still `readonly: true`)) with **`DELTA_CHECK=true`**, fix-touched paths, prior confirmed findings + clearance claims, and fix-round oracle tails. New MEDIUM-only issues do **not** force full re-audit. Delta confirm is still a **real second pass** — clearances are not green until this Task returns zero HIGH/MEDIUM (or stop-early).
 3. If a confirm-only delta check **surfaces a new HIGH**, do **not** Phase 2 yet — **escalate in the same round** to full re-audit (dual critics + confirm) before further fixes. Still counts as one round toward the cap.
 
 **Per round:**
@@ -117,6 +117,16 @@ Run **sequentially** — do not start the next round until the current round's P
 4. If green or stop-early **after a confirm/delta confirm**, or round `= 4`: exit loop.
 
 **End state:** short **Loop summary** that includes a string matching `.cursor/hooks/audit_marker.py` `GREEN_RE` when green so the push-audit stamp can fire — prefer `**Green:** Y` or `Green: Y` (also accepted: `rounds used … Green: Y` / `Loop summary … Green: Y`). When not green, use `**Green:** N` or `Green: N`. **Push OK also requires dual-critic→confirm Task dispatch evidence in the transcript** (`tool_use` Task blocks, not assistant prose alone) when `/myauditandfix` was invoked (see `audit_marker.py` pipeline gate; kill switch `/tmp/.cursor_audit_pipeline_gate_disable`). Also include: rounds used (e.g. 2/4), re-audit mode used each round (full vs delta), what changed across rounds, what was re-verified vs still unverified, any findings left after cap. **Green: Y requires at least one post-fix confirm or delta-confirm Task in the transcript when Phase 2 ran** (fix self-report alone is insufficient).
+
+**After Green: Y — stamp_ok (cloud / stop-miss):** when this conversation may lack a local agent transcript (Cloud Agent `bc-*` ids, or stop hook did not stamp), run before any `/commitprmerge` push. With a real `conversation_id`, `stamp_ok` requires a prior PENDING marker (`/myauditandfix` or `/verify-plan` already invoked); without PENDING it no-ops. Workspace-only stamp (no `conversation_id`) can still mint WS_OK without PENDING by design.
+
+```bash
+python3 "/Volumes/Cloud Storage/Claude/.cursor/hooks/audit_marker.py" stamp_ok <<EOF
+{"conversation_id":"<id if known>","cwd":"$(pwd)","workspace_roots":["$(pwd)"]}
+EOF
+```
+
+This is the authorized recovery path — not inventing bypass files. Local chats with a real transcript still rely on stop + pipeline evidence; `stamp_ok` is backup when that path cannot see the transcript.
 
 ## Anti-patterns (do not)
 
