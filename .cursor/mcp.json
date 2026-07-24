@@ -33,7 +33,14 @@
       ]
     },
     "firecrawl": {
-      "url": "https://mcp.firecrawl.dev/${env:FIRECRAWL_API_KEY}/v2/mcp"
+      "command": "npx",
+      "args": [
+        "-y",
+        "firecrawl-mcp"
+      ],
+      "env": {
+        "FIRECRAWL_API_KEY": "${env:FIRECRAWL_API_KEY}"
+      }
     }
   }
 }
