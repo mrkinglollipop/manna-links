@@ -18,6 +18,22 @@
       "env": {
         "NOTION_TOKEN": "${env:NOTION_TOKEN}"
       }
+    },
+    "better-design": {
+      "url": "https://better-design.com/api/mcp",
+      "headers": {
+        "Authorization": "Bearer ${env:BETTER_DESIGN_API_KEY}"
+      }
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ]
+    },
+    "firecrawl": {
+      "url": "https://mcp.firecrawl.dev/${env:FIRECRAWL_API_KEY}/v2/mcp"
     }
   }
 }
