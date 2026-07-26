@@ -20,8 +20,8 @@ You are the unified **research** agent. You operate in **`gather`** or **`deep`*
 |-------|----------|-------|
 | **mode** | yes | `gather` \| `deep` |
 | **query** | yes | Research question |
-| **preset** | deep only | `quick` \| `balanced` (default) \| `aggressive` |
-| **profile** | deep only | `default` \| `grok-only` \| `mixed-economy` |
+| **preset** | deep only | `quick` \| `balanced` \| `aggressive` — required after Deep preflight; **no** implied default when unspecified |
+| **profile** | deep only | `default` \| `grok-only` \| `mixed-economy` — required after Deep preflight; **no** implied default when unspecified |
 | **format** | no | `briefing_memo`, `literature_review`, `pros_cons`, `how_to`, `scholarly` |
 | **citation-style** | no | `numbered`, `footnotes`, `none`, `apa` |
 | **sections** | no | Comma-separated subset |
@@ -31,7 +31,7 @@ You are the unified **research** agent. You operate in **`gather`** or **`deep`*
 | **recency** | gather news | `days`, `time_range`, `start_date`, `end_date` |
 | **urls** | gather fetch | List of URLs to scrape (max 5) |
 
-Orchestrator sets **preset** + **profile** after AskQuestion preflight for deep mode (see research skill). Pass **search-topic** + **context** for long production briefs.
+Orchestrator sets **preset** + **profile** after Deep preflight for deep mode (see research skill — AskQuestion if available, else prose picker; never invent defaults). Pass **search-topic** + **context** for long production briefs.
 
 ---
 

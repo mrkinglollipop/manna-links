@@ -23,20 +23,23 @@ Orchestrator-owned **triage + dispatch**. LLMs do not browse independently in ga
 | "what is / look up / find" (no research intent) | **inline** | — | `web-search` skill |
 | "research X" (bare) | **AskQuestion mode** | — | mode popup → then gather or deep |
 | "research X, quick / low effort" | **AskQuestion mode** | `quick` (if Deep chosen) | effort-only does **not** skip mode popup |
-| "comprehensive / report / literature review / scholarly" | **deep** | balanced + format | `Task(research, mode=deep, run_in_background=true)` |
-| "high / deep dive / aggressive" | **deep** | `aggressive` | `--preset aggressive` |
+| "comprehensive / report / literature review / scholarly" | **deep** | **Ask if unspecified** | mode=deep, then Deep preflight below |
+| "high / deep dive / aggressive" | **deep** | `aggressive` (effort explicit) | Deep preflight still for **profile** if missing |
 | "latest news on X" | **gather** | — | Tavily news + recency in gather (no mode popup) |
 | "video / tutorial / talk / YouTube" | **gather** | — | YouTube prioritized + web providers (no mode popup) |
-| explicit `gather` / `deep` | named mode | as applicable | dispatch without mode popup |
-| Deep triggered, effort unspecified | **deep** | **balanced** | `--preset balanced` |
+| explicit `gather` / `deep` | named mode | as applicable | gather: dispatch; deep: Deep preflight if effort/profile missing |
 
 **Effort mapping:** low → `quick`, medium → `balanced`, high → `aggressive`.
+
+**HARD — never silent-default deep:** Do **not** invent `--preset balanced` or `--profile default` when Matt did not name them. Missing either → Deep preflight (below). Only exception: Matt said `your call` / `use defaults` / `don't ask` this turn.
 
 ## § Mode preflight — AskQuestion (ambiguous only)
 
 **Fire when:** intent is research-agent dispatch and mode is not implied (bare `"research X"`, or effort-only like quick/low with no report/deep cues).
 
 **Skip when any of:** explicit gather/deep/comprehensive/report/literature review/scholarly/deep dive; single lookup → `web-search`; strong gather cues (`latest news`, video/tutorial/YouTube); Matt already named mode in-thread this turn.
+
+**Skipping mode AskQuestion does not skip Deep preflight.** `"comprehensive report"` → deep mode without mode popup, but still ask effort + profile unless both are explicit.
 
 **Popup options (Recommended = Gather):**
 
@@ -49,9 +52,17 @@ After Gather is chosen, agent returns sources + short synth + conflicts; **orche
 
 ## Deep preflight — AskQuestion (required)
 
-Before `Task(research, mode=deep, run_in_background=true)`, run **AskQuestion** when **either** effort **or** model profile is missing from the prompt.
+Before `Task(research, mode=deep, run_in_background=true)`, run Deep preflight when **either** effort **or** model profile is missing from the prompt. **STOP** until answered — do not dispatch deep.
 
-**Skip** deep effort/profile AskQuestion when both are explicit, e.g. `"comprehensive report, high effort, default models"` or `"deep research X, medium, grok-only"`.
+**Skip** Deep preflight only when **both** are explicit, e.g. `"comprehensive report, high effort, default models"` or `"deep research X, medium, grok-only"`.
+
+### Operator note — tool availability (Cursor product)
+
+Parent-tool inventory is a Cursor product feature on the *orchestrator* turn — not something the research skill can conjure.
+
+1. Prefer **`AskQuestion`** (modal) when the tool exists in this turn's tool list.
+2. If `AskQuestion` is **missing** / errors ("Tool not found", "couldn't pop up") → ask the **same two questions in chat prose** (numbered options) and **STOP**. Do not proceed with invented defaults. Prose picker is success, not degradation theater.
+3. Known product gap (**verified** in memory): some parents (notably **Grok 4.5**, sometimes others) do not expose `AskQuestion`. Do not claim “popup failed due to research skill” when the tool is absent.
 
 ### Question 1 — Effort
 
@@ -67,16 +78,15 @@ Web evidence is always Tavily + Firecrawl + YouTube (not selectable). LLM roles 
 
 | Profile ID | Label | Researchers | Synthesizer | Adjudicator |
 |------------|-------|-------------|-------------|-------------|
-| `default` | **Default (Recommended)** — mixed pool, Grok synth | grok-4.3, deepseek-chat, MiniMax-M3 | grok-4.3 | grok-4.3 |
-| `grok-only` | All Grok — fastest, single provider | grok-4.3 ×3 | grok-4.3 | grok-4.3 |
-| `mixed-economy` | Grok + DeepSeek — no MiniMax | grok-4.3, deepseek-chat | grok-4.3 | grok-4.3 |
+| `default` | **Default (Recommended)** — mixed pool, Grok synth | grok-4.5, deepseek-v4-pro, MiniMax-M3 | grok-4.5 | grok-4.5 |
+| `grok-only` | All Grok — fastest, single provider | grok-4.5 ×3 | grok-4.5 | grok-4.5 |
+| `mixed-economy` | Grok + DeepSeek — no MiniMax | grok-4.5, deepseek-v4-pro | grok-4.5 | grok-4.5 |
 
 Profiles: `scripts/deep_research/profiles/{id}.yaml`. Pass `--profile <id>` to `run.py`.
 
 ### Optional local persistence (v1)
 
-Gitignored `scripts/deep_research/deep_research_config.local.yaml` merges over profile + `config.yaml` when present. Use to persist last AskQuestion choices locally; pre-select as Recommended on next AskQuestion (orchestrator may read file if it exists — do not commit).
-
+Gitignored `scripts/deep_research/deep_research_config.local.yaml` merges over profile + `config.yaml` when present. Use to persist last AskQuestion choices locally; pre-select as Recommended on next AskQuestion (orchestrator may read file if it exists — do not commit). Persistence does **not** skip asking unless Matt opted into defaults.
 ## Format knobs (deep)
 
 Pass through to `run.py`: `--format`, `--citation-style`, `--sections`, `--visual-level`, `--search-topic`, `--context`.
