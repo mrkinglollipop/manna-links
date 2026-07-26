@@ -144,11 +144,11 @@ python3 scripts/backtest_asof2007.py --out backtest.csv
 - **Portability note:** the only data backend is FMP-schema SQLite (the `FMPStore` class). There
   is **no yfinance/online fallback** — running outside this workspace needs databases of the same
   schema (or a new adapter added to `FMPStore`).
-- **Cursor:** registered via [`.cursor/rules/fortress-compounder-screener.mdc`](../../../.cursor/rules/fortress-compounder-screener.mdc)
-  at the repo root, which tells Cursor's agent what the skill does, how to invoke it, and its exact
-  dependencies. The scripts are pure stdlib with no workspace imports, so Cursor runs them directly
-  — it only needs the FMP SQLite directory (`--fmp-dir`/`$FMP_DIR`). To use in another Cursor
-  project, copy this skill folder and that `.mdc` into the project's `.cursor/rules/`.
+- **Cursor:** on claude-os-workspace, registered via `.cursor/rules/fortress-compounder-screener.mdc`
+  (workspace-tier rule — **not** mirrored to app repos). The skill folder itself ships in the plugin
+  and app-repo mirrors. Scripts are pure stdlib with no workspace imports; Cursor needs the FMP
+  SQLite directory (`--fmp-dir`/`$FMP_DIR`). To enable the rule trigger in another project, also copy
+  that `.mdc` into the project's `.cursor/rules/`.
 
 ## Limitations & honest caveats
 

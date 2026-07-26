@@ -43,7 +43,7 @@ Every dispatch for a round must include:
 - For verifier step 1: **both critic reports** (bug_hunt + claim_bust) — **unless** `DELTA_CHECK=true`
 - For verifier step 2 only: confirmed finding list from step 1
 
-**Pin Task `model` on every audit dispatch:** critics → `model: "composer-2.5-fast"` + `readonly: true` (omit denied). Adjudicator (confirm + fix) → **only** `cursor-grok-4.5-high`, `k3`, or **omit** `model`. Order: pin high when Task accepts it → else pin `k3` → else omit (frontmatter Grok-high / Auto+K3 inherit). Never Composer. If neither Grok nor K3 lands → STOP. Escape hatch: `generalPurpose` + read `.cursor/agents/<name>.md` with the **same** rules. Never bare `grok-4.5-high` or Grok `*-fast`. Native types preferred.
+**Pin Task `model` on every audit dispatch:** critics → `model: "composer-2.5-fast"` + `readonly: true` (omit denied). Adjudicator (confirm + fix) → **only** **omit** `model` or `cursor-grok-4.5-high`. Never k3 as an adjudicator pin. Never Composer. **Default: omit** (frontmatter Grok-high backs omit under Auto). Optional pin high ONLY when a prior Task in **this conversation transcript** landed with explicit `model: cursor-grok-4.5-high` without product deny / "Couldn't start"; if unsure → omit; never-first-under-Auto. On pin deny: retry omit once; never k3; never Composer. If omit fails → STOP. Escape hatch: `generalPurpose` + read `.cursor/agents/<name>.md` with the **same** rules. Never bare `grok-4.5-high` or Grok `*-fast`. Native types preferred.
 
 **Escape hatch (detail):** if Task enum lacks `session-auditor` or `audit-verifier`, use `generalPurpose` + read `.cursor/agents/<name>.md` with the **same** pins on the Task call — hook denies omit on audit-shaped escape-hatch prompts too. Native `subagent_type` is preferred when available.
 
@@ -87,7 +87,7 @@ Critics run shell/read oracles within their 3-run cap. Paid web is orchestrator-
 
 ### Confirm-only verifier
 
-After critics return (or on `DELTA_CHECK=true` without critics), dispatch `audit-verifier` with `fix_authorized=false`, `readonly: true`, **`TRACK=plan`**, adjudicator model high → k3 → omit (never Composer), Freshness oracle notes, and **both critic reports** — **unless** `DELTA_CHECK=true` (then fix-touched paths + prior findings + clearance claims). Verifier dedupes, builds ledger (including freshness rows), and returns §4-ready payload.
+After critics return (or on `DELTA_CHECK=true` without critics), dispatch `audit-verifier` with `fix_authorized=false`, `readonly: true`, **`TRACK=plan`**, adjudicator model omit-first (omit default; optional `cursor-grok-4.5-high` only if this transcript already saw Task accept that pin; on deny retry omit once; never k3 as an adjudicator pin; never Composer), Freshness oracle notes, and **both critic reports** — **unless** `DELTA_CHECK=true` (then fix-touched paths + prior findings + clearance claims). Verifier dedupes, builds ledger (including freshness rows), and returns §4-ready payload.
 
 ## 3. Report format
 
@@ -104,7 +104,7 @@ Orchestrator surfaces mandatory report **before any plan edits**.
 When **`/verify-plan`** invoked and audit is **not green** (and not `audit-only`):
 
 1. Complete mandatory report first (§3).
-2. Dispatch `audit-verifier` with `fix_authorized=true`, **`TRACK=plan`**, adjudicator model high → k3 → omit (never Composer), and confirmed finding list only.
+2. Dispatch `audit-verifier` with `fix_authorized=true`, **`TRACK=plan`**, adjudicator model omit-first (omit default; optional `cursor-grok-4.5-high` only if this transcript already saw Task accept that pin; on deny retry omit once; never k3 as an adjudicator pin; never Composer), and confirmed finding list only.
 3. Edit **only** plan surfaces:
    - `.cursor/plans/*.md`
    - `/Volumes/Cloud Storage/Memory/conversations/topics/*-plan.md` (when that is the plan SSOT for this thread)
@@ -141,7 +141,7 @@ Run **sequentially** — do not start the next round until the current round's P
 2. **Confirm-only delta check** only when **both**:
    - the **prior confirm** had **zero HIGH**, **and**
    - the fix introduced **no new HIGH** (`NEW_HIGH_FROM_FIX=false`)  
-   → **skip dual critics**. One confirm-only `audit-verifier` (`fix_authorized=false`, adjudicator model high → k3 → omit — never Composer; still `readonly: true`) with **`DELTA_CHECK=true`**, fix-touched paths, prior findings + clearance claims. New MEDIUM-only issues do **not** force full re-audit. Delta is still a **real second pass**.
+   → **skip dual critics**. One confirm-only `audit-verifier` (`fix_authorized=false`, adjudicator model omit-first (omit default; optional `cursor-grok-4.5-high` only if this transcript already saw Task accept that pin; on deny retry omit once; never k3 as an adjudicator pin; never Composer; still `readonly: true`)) with **`DELTA_CHECK=true`**, fix-touched paths, prior findings + clearance claims. New MEDIUM-only issues do **not** force full re-audit. Delta is still a **real second pass**.
 3. If a confirm-only delta check **surfaces a new HIGH**, escalate in the **same round** to full re-audit before Phase 2. Still one round toward the cap.
 
 **Per round:**
