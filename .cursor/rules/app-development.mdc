@@ -30,6 +30,18 @@ Shell with `required_permissions: ["all"]` for `xcodebuild`, `simctl`, codesign,
 | `/Volumes/Cloud Storage/Code/` | mrs-lollipop, Manna, circletown, sojourn, codewright, scriptorium-native, scriptorium, relay, … |
 | `~/Projects/` | ft-terminal-ios, ft-command, ft-terminal-mac, scriptorium-web |
 
+## Bare-repo lint nudge (Phase-2)
+
+When first editing a **bare** app repo this session (no lint config for the language in play), **propose once** — do not silent-install, do not fleet-PR `Code/`:
+
+| Stack | Bare means (approx.) | Propose |
+|-------|----------------------|---------|
+| Python | No `[tool.ruff]` / `ruff.toml` / `.ruff.toml` | Root `pyproject.toml` `[tool.ruff]` (line-length 100); CI only if the repo already has Actions |
+| TS/JS | No Biome/ESLint config | Biome (prefer) over inventing ESLint |
+| Swift | No `.swiftlint.yml` | `.swiftlint.yml` only when next shipping that app |
+
+Leave repos that already have a linter alone. Ask before write. Same rule lives in `code-hygiene.mdc`.
+
 ## Build oracle (HARD)
 
 1. **XcodeGen repos:** `xcodegen generate` → `xcodebuild` (never `swift build` alone — misses target membership).

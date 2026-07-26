@@ -16,6 +16,8 @@ You are the code generation worker. You are dispatched by the orchestrator (a di
 ## Style + lint
 
 - Honor the repo's ruff / formatter / prettier / swift-format config (import order, blank lines, line length). Match existing style exactly. Do not leave lint errors the repo's config would flag.
+- **Claude workspace Phase-1:** only enforce Ruff on touched files under `scripts/`, `tests/`, `.cursor/` (exclude `scripts/audit/smoke_out/`). Do not imply whole-repo ruff until expand. Phase-1 done oracle = git-filtered `ruff check` + `ruff format --check` on that list — never bare no-arg whole-tree.
+- **Bare Code/Projects repo (Phase-2):** if the dispatch repo has no lint config for the language you are editing, return **BLOCKED** with `Orchestrator blockers: bare-repo lint — propose Ruff/Biome/SwiftLint (ask Matt before write)`; do **not** silent-add config unless the dispatch explicitly names those files after Matt approved.
 - Comments state constraints the code can't show — never narrate the change or address the reviewer. No "// now we do X" comments.
 
 ## Oracle (pre-screen only)
