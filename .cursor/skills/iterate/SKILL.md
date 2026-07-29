@@ -1,0 +1,129 @@
+---
+name: iterate
+description: >-
+  Autonomous improve loop: detect target, run lens skills (working/bugs/gaps/polish),
+  track findings in todos + durable run log, fix existing-surface issues, recheck.
+  Use for /iterate. Not /myauditandfix (claims/correctness). Model-agnostic.
+---
+
+# Iterate
+
+**Mode:** fix authorized by default when `/iterate` invoked for **existing surface**
+plus novel run-log paths under the contract_guard allowlist. Novel product files
+still need a Deliverable Contract (or other escape). Trailing `find-only` /
+`audit-only` = find+log only (no writes except run log).
+
+**vs `/myauditandfix`:** Iterate = constructive improve. myaudit = claims/lies/process. Optional post-iterate myaudit if big claims.
+
+## 0. Parse trailing text
+
+| Token | Meaning |
+|-------|---------|
+| (lens omitted) | Default lens set = **`working` only** |
+| `lens=<name>` or bare `polish` / `bugs` / `gaps` / `working` | Single lens |
+| `lenses=all` | `working` → `bugs` → `gaps` → `polish` |
+| `lenses=a,b` | Explicit list, **left-to-right CSV order** (as written) |
+| `find-only` / `audit-only` | Mode find-only |
+| `resume=<path\|run-id>` | Resume run log |
+| path / repo name | Force `$REPO_ROOT` / target |
+
+## 1. Resolve host + `$REPO_ROOT`
+
+1. Host from tools present (Task → cursor; spawn_subagent → grok; else claude). Read `.cursor/dispatch-settings.yaml` → `hosts.<host>.iterate`.
+2. `$REPO_ROOT` = `git rev-parse --show-toplevel` for the **target**, not a multi-root join key.
+3. Scope floor: that root only — never whole Cloud Storage.
+
+## 2. Dispatch or solo
+
+- **Hire once:** Task/spawn/Agent with `subagent_type` from dispatch-settings (`iterate` or escape + read `agents/iterate.md`). Model: omit/inherit (never pin Opus/Fable).
+- **Hire dead:** parent runs this skill solo (same procedure).
+- Agent owns the loop; parent owns Loop summary + desktop-drive consent. Lens skills are **read inline** — never nested Task per lens.
+
+## 3. Target class detect
+
+First match:
+
+| Class | Signals | Verify lane |
+|-------|---------|-------------|
+| iOS | xcodeproj / xcworkspace / project.yml / iOS pubspec | xc-mcp / ios-oracle |
+| Mac | macOS scheme / Mac target | Mac run destination |
+| Electron | electron in package.json | electron-oracle / CDP |
+| Web | next/vite/react scripts | browser / Playwright |
+| Aegis | Code/grok-build-harness, Aegis gui | smokes + desktop consent |
+| Loom/harness | Code/loom*, .cursor-plugin hooks as target | smokes + desktop consent |
+| Biblical | Code/biblical-system, Lectern | domain smoke + UI if any |
+| Manna | Code/Manna, manna-links | domain smoke + UI if any |
+| Generic | else | README/CLAUDE.md + primary workflow |
+
+Mis-detect: if primary smoke fails immediately, re-read signals once; else log assumed class and continue. Ask Matt only if primary workflow cannot be named.
+
+## 4. Run log (what / why / how)
+
+Template: `references/run-log-template.md`.
+
+**Path order** (`mkdir -p` first):
+
+1. `$REPO_ROOT/.cursor/state/iterate/<run-id>.md`
+2. `$REPO_ROOT/outputs/iterate/<run-id>.md`
+3. Claude Mac only: `/Volumes/Cloud Storage/Claude/outputs/iterate/<run-id>.md`
+4. Cloud/unknown: `/tmp/iterate/<run-id>.md` (print path in summary)
+
+`run-id` = `YYYYMMDDTHHMMSSZ-<short>` UTC.
+
+**Resume:** `resume=` path/id; else glob log root for `status: in-progress` matching `repo_root:`; else latest mtime. Rebuild todos from Status=`open` (fix) or `logged` (find-only).
+
+**Cadence:** create at start; append after each find and fix batch; Loop summary **must** print log path.
+
+## 5. Lens loop
+
+- Never load more than **one** lens file per find pass.
+- Mission round = find→fix→recheck on current lens.
+- Per-lens max **2** cycles then advance; **global max 4** (global wins).
+- Cap stop: log `lenses_skipped`; green iff zero Status=`open` **HIGH/MEDIUM**
+  (LOW may remain `logged`/`open` without blocking green). TodoWrite mirrors open H/M.
+
+### Per find pass
+
+1. Read `lenses/<lens>.md`.
+2. Emit ≤8 findings (HIGH→MEDIUM→LOW). Overflow → Deferred (not silent drop).
+3. Fix mode: Status=`open`; TodoWrite mirrors open H/M.
+4. Find-only: Status=`logged`; no fix writes; todos completed/cancelled reason `find-only`.
+
+### Fix
+
+- Fix Status=`open` HIGH then MEDIUM; LOW only if budget remains.
+- **Existing surface only** — new product surface → stop + Blockers.
+- Security: never API Keys/, portfolio statements, proprietary alpha; no sensitive-screen exfil.
+- Harness targets: no silent always-on hook/rule rewrites.
+- Oracle: 3-run cap **per fix batch**, not whole mission.
+- Log How-done + Evidence; Status=`fixed`.
+
+### UI drive
+
+- App/sim/browser: announce, then drive (no ask).
+- Desktop/Cursor UI: ask once unless standing auth (“good to drive until I get back”).
+- Always one-line announce before drive.
+
+### Cloud degrade
+
+No xc-mcp / ios-oracle / Peekaboo → build-only or BLOCKED visual. Never fake VISUAL PASS. Memory/graph under `/Volumes/...` soft-fail.
+
+### Post-polish
+
+If polish fixes ran and `working` was in requested set (or primary path touched): cheap working re-smoke; fail → Status=`open`.
+
+## 6. Green / stop
+
+**Green:** zero Status=`open` HIGH/MEDIUM; no pending desktop-drive consent blockers; `working` gate only when requested set includes `working` (omitted default, `lens=working`, or `lenses=all`) — then verified or blocked. Find-only: green = find+log done + zero open H/M. Cap-stop with only Deferred/`logged`/open-LOW OK.
+
+**Stop-early:** remaining items all Matt-only.
+
+## 7. Loop summary (parent)
+
+Rounds used, green Y/N, lenses run/skipped, run-log path, blockers. Flavor-OFF for log/skill; Matt chat may use Wade.
+
+## FAQ
+
+- Product permission cards cannot be eliminated — request `required_permissions` correctly.
+- `/iterate` stamps PENDING + iterate-specific PENDING; novel run-log paths only
+  (contract_guard). Novel product files still need Deliverable Contract.
