@@ -50,7 +50,7 @@ Every dispatch for a round must include:
 - For verifier step 1: **both critic reports** (bug_hunt + claim_bust) — **unless** `DELTA_CHECK=true`
 - For verifier step 2 only: confirmed finding list from step 1
 
-**Pin Task `model` on every audit dispatch:** critics → `model: "composer-2.5-fast"` + `readonly: true` (omit denied). Adjudicator (confirm + fix) → **only** **omit** `model` or `cursor-grok-4.5-high`. Never k3 as an adjudicator pin. Never Composer. **Default: omit** (frontmatter Grok-high backs omit under Auto). Optional pin high ONLY when a prior Task in **this conversation transcript** landed with explicit `model: cursor-grok-4.5-high` without product deny / "Couldn't start"; if unsure → omit; never-first-under-Auto. On pin deny: retry omit once; never k3; never Composer. If omit fails → STOP. Escape hatch if Task enum lacks subagent_type: `generalPurpose` / `explore` / missing-type + read `.cursor/agents/<name>.md` with the **same** rules. Never bare `grok-4.5-high` or Grok `*-fast`. Native types preferred.
+**Host dispatch (HARD):** resolve critic + adjudicator from **`.cursor/dispatch-settings.yaml`** for the active host (`cursor` | `grok` | `claude`). Same table as `/myauditandfix`: Cursor critics pin `composer-2.5-fast`; adjudicator **omit-first** (optional `cursor-grok-4.5-high` only; never Composer/k3). **Grok/Claude omit model always** (harness default). Do not hardcode Cursor slugs into non-Cursor sessions.
 
 ## Freshness pass (orchestrator — before dual critics on full re-audit)
 
@@ -70,10 +70,10 @@ Do **not** edit files during this phase.
 
 1. State scope block: target, in scope, out of scope, depth.
 2. Run **Freshness pass**; attach notes to artifact pack.
-3. **Dual critics (parallel):** dispatch two `session-auditor` Tasks in one turn with **`TRACK=plan`**, **`model: "composer-2.5-fast"`**, `readonly: true`:
+3. **Dual critics (parallel):** dispatch two critics in one turn with **`TRACK=plan`**, roles `bug_hunt` + `claim_bust`, using the **active host profile** from `dispatch-settings.yaml`:
    - `ROLE=bug_hunt` — plan contradictions, missing acceptance criteria, impossible sequencing
    - `ROLE=claim_bust` — shared freshness items + plan-vs-thread intent
-4. **Confirm-only verifier:** dispatch `Task(subagent_type: "audit-verifier", readonly: true)` with `fix_authorized=false`, **`TRACK=plan`**, both critic reports — **unless** `DELTA_CHECK=true` — and Freshness oracle notes. Adjudicator model: omit-first (omit default; optional `cursor-grok-4.5-high` only if this transcript already saw Task accept that pin; on deny retry omit once; never k3 as an adjudicator pin; never Composer). Verifier confirms/rejects/dedupes and returns §4-ready payload.
+4. **Confirm-only verifier:** dispatch adjudicator with `fix_authorized=false`, **`TRACK=plan`**, both critic reports — **unless** `DELTA_CHECK=true` — and Freshness oracle notes (host-profile type/model/readonly). Verifier confirms/rejects/dedupes and returns §4-ready payload.
 5. Orchestrator surfaces **mandatory report** to Matt in order (from verifier payload + synthesis):
    - **Action summary** (verdict, do now, blocked on Matt, plan status)
    - **Verification ledger** (every row: verified / unverified / inferred; freshness rows included)
@@ -88,7 +88,7 @@ Do **not** edit files during this phase.
 
 Skip when green after Phase 1 or trailing `audit-only`.
 
-1. Dispatch `audit-verifier` with `fix_authorized=true`, **`TRACK=plan`**, adjudicator model omit-first (omit default; optional `cursor-grok-4.5-high` only if this transcript already saw Task accept that pin; on deny retry omit once; never k3 as an adjudicator pin; never Composer), and the **confirmed finding list** from Phase 1 — fix **only** plan surfaces (see SKILL §4); no app/harness edits.
+1. Dispatch adjudicator with `fix_authorized=true`, **`TRACK=plan`**, host-profile fix settings, and the **confirmed finding list** from Phase 1 — fix **only** plan surfaces (see SKILL §4); no app/harness edits.
 2. Re-verify each fix via reads + ledger updates only (no build/test oracles) — **this is not a re-audit**.
 3. Update Verification ledger and Plan completion rows. Fix-agent `NEW_HIGH_FROM_FIX` / clearance notes select post-fix mode only — they do **not** authorize green or “no more HIGH.”
 
@@ -102,11 +102,11 @@ Run sequentially up to **4 rounds**. See SKILL §5 for green/not-green criteria 
 1. **Full re-audit** when **any** of:
    - the **prior confirm** (full or delta) had **any HIGH** finding — including HIGH the fix claims to have cleared (clearing prior HIGH requires dual critics, not delta); **or**
    - the fix introduced **any new HIGH** (including a previously-cleared HIGH reopened as HIGH), or the fix verifier reports a HIGH regression  
-   → Freshness pass + dual `session-auditor` + confirm-only verifier.
+   → Freshness pass + dual critics + confirm-only verifier (host profile).
 2. **Confirm-only delta check** only when **both**:
    - the **prior confirm** had **zero HIGH**, **and**
    - the fix introduced **no new HIGH** (`NEW_HIGH_FROM_FIX=false`)  
-   → **skip dual critics**. Dispatch one confirm-only `audit-verifier` (`fix_authorized=false`, adjudicator model omit-first (omit default; optional `cursor-grok-4.5-high` only if this transcript already saw Task accept that pin; on deny retry omit once; never k3 as an adjudicator pin; never Composer; still `readonly: true`)) with **`DELTA_CHECK=true`**, fix-touched paths, prior confirmed findings + clearance claims. New MEDIUM-only issues do **not** force full re-audit. Delta confirm is still a **real second pass**.
+   → **skip dual critics**. Dispatch one confirm-only adjudicator (`fix_authorized=false`, host-profile confirm + **`DELTA_CHECK=true`**), fix-touched paths, prior confirmed findings + clearance claims. New MEDIUM-only issues do **not** force full re-audit. Delta confirm is still a **real second pass**.
 3. If a confirm-only delta check **surfaces a new HIGH**, do **not** Phase 2 yet — **escalate in the same round** to full re-audit (dual critics + confirm) before further fixes. Still counts as one round toward the cap.
 
 1. Round 1: full report before edits (always dual critics + confirm); stop-early if only Matt blockers remain

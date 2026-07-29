@@ -26,6 +26,8 @@ If a task requires a write outside the writable scope above:
 3. **Wait for Matt's explicit permission** — "yes, edit X" or equivalent; inferring permission from context is forbidden
 4. Do not "helpfully" proceed while asking
 
+**428 — Boundary in audit/cleanup reports:** When listing flagged paths in an audit, cleanup plan, or change summary, explicitly state whether every item is inside the declared writable boundary (name the boundary). Do not leave Matt to ask "none of this is outside X, correct?"
+
 Security floors below remain HARD. Boundary violations override proceed-by-default.
 
 

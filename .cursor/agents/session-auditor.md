@@ -1,6 +1,8 @@
 ---
 name: session-auditor
 description: "Session audit critic; dispatched with ROLE=bug_hunt or ROLE=claim_bust. Read-only adversarial lens on invoking-thread deliverables. Returns structured findings only — no writes, no fixes."
+# Frontmatter model applies on Cursor when product honors it. Host dispatch SSOT:
+# .cursor/dispatch-settings.yaml (cursor pins composer-2.5-fast; grok/claude omit).
 model: composer-2.5-fast
 readonly: true
 is_background: false
@@ -16,7 +18,12 @@ The orchestrator **must** include:
 
 If ROLE or TRACK is missing or invalid, return **BLOCKED** with `Orchestrator blockers: missing or invalid ROLE or TRACK`.
 
-**Must** pass `model: "composer-2.5-fast"` and `readonly: true` on **every** Task dispatch (native or escape hatch). Omit inherits the parent chat model — when the parent is Grok, critics land on Grok and frontmatter does **not** win. If the Task enum lacks `session-auditor`, orchestrator uses `generalPurpose` or `explore` + read `.cursor/agents/session-auditor.md` with the **same** pins (escape hatch only; native type preferred). Escape hatch must still pin `composer-2.5-fast` — `task_model_allowlist` denies omit/wrong model on critic-shaped `generalPurpose`/`explore` prompts too (not a pin without the hook: fail-open/kill switch).
+**Host model/type (orchestrator responsibility):** resolve from **`.cursor/dispatch-settings.yaml`**.
+- **cursor:** native `session-auditor` when available; pin `composer-2.5-fast` + `readonly: true`. Escape hatch: `generalPurpose`/`explore` + this file, same pins.
+- **grok:** `spawn_subagent` type `general-purpose`, **model omit** (harness default), `capability_mode: read-only`, prompt includes this file. Do **not** pin Cursor or composer slugs.
+- **claude:** Agent + **model omit** + this file.
+
+Critics do not self-select models — if the orchestrator violated host policy, note it under Orchestrator blockers and still return findings when possible.
 
 ## Artifact pack (orchestrator supplies every dispatch)
 
