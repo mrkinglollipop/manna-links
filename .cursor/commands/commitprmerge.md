@@ -125,9 +125,10 @@ When continuing unpushed commits already on a feature branch, **stay on that bra
 6. **Prepr evidence reuse (code ships)** — when shipping code files (py, ts, swift, etc.): **do not** run `prepr_audit.py`. Read the latest `/myauditandfix` prepr prepare evidence from **this conversation's transcript** (completed `--worktree --prepare` run, fingerprint, bundle attached to critics). This step is a **transcript read, not a mechanical marker check** — the mechanical gate is `push_audit_gate` on `Green: Y` at step 5. If the transcript has no current Green:Y with completed prepr prepare evidence for the code being shipped → **INCOMPLETE**; tell Matt to run `/myauditandfix` (prepr is that command's oracle, not commit/PR). Docs-only / no-code ships: prepr **N/A**.
 7. **Open PR** — `gh pr create --base main --title "<type>: <summary>" --body "…"`. Cloud Agent fallback: `ManagePullRequest` `action: create_pr` when `gh pr create` fails with integration permissions.
 8. **Merge gate (repo-specific)**
-   - **Green lane:** see `/Volumes/Cloud Storage/Memory/conversations/topics/ios-ship-runbook.md` § Green lane (session scope, build green, myaudit prepr evidence from transcript, BugBot, human checkpoint).
-   - **No** `.github/workflows/bugbot-gate.yml` (e.g. claude-os-workspace): `gh pr ready <N>` if draft, then `gh pr merge --merge --delete-branch`
-   - **Has bugbot-gate:** check `gh pr view --json mergeable,mergeStateStatus`. If `BLOCKED` on `bugbot-reviewed`: wait for BugBot review of HEAD, or comment `bugbot run`, or — only when Matt explicitly authorized bypass in this thread — `gh pr edit <N> --add-label bugbot-waived`, re-check until `CLEAN`, merge, remove label post-merge. Do not use `gh pr merge --admin` (rulesets ignore it).
+   - **Green lane:** see `/Volumes/Cloud Storage/Memory/conversations/topics/ios-ship-runbook.md` § Green lane (session scope, build green, myaudit prepr evidence from transcript, human checkpoint). BugBot is **opt-in** here too — never auto-trigger from this command.
+   - **BugBot default (all repos):** **skipped** unless Matt explicitly asked for BugBot in this thread or trailing text (e.g. "run bugbot", `/review-bugbot`). Do **not** post `bugbot run`, wait for BugBot, or require its review by default.
+   - **No `bugbot-reviewed` required check** (no `.github/workflows/bugbot-gate.yml` or ruleset does not block on it): `gh pr ready <N>` if draft, then `gh pr merge --merge --delete-branch`. BugBot ship line: **skipped (default)** or **N/A**.
+   - **Legacy `bugbot-reviewed` check blocks merge:** diagnose the workflow/check failure and retry only the current workflow when safe. A missing or failed compatibility check is infrastructure, not permission to trigger BugBot. Report **INCOMPLETE** with the exact check URL if it remains blocked. Do **not** auto-comment `bugbot run`, poll for BugBot, or suggest BugBot as the default remedy. If Matt explicitly requested BugBot, use `/review-bugbot` or his stated method. **Waiver** (`gh pr edit <N> --add-label bugbot-waived`) only when Matt explicitly authorized bypass in this thread; re-check until `CLEAN`, merge, remove label post-merge. Do not use `gh pr merge --admin` (rulesets ignore it).
 9. **Sync local main** — `git checkout main && git pull origin main`.
 
 Run shell steps with evidence; tag claims **verified** / **unverified** / **failed** only from output seen this session.
@@ -140,7 +141,7 @@ Run shell steps with evidence; tag claims **verified** / **unverified** / **fail
 - PR URL + merge state (**MERGED** or open + why not merged)
 - `git log -1 --oneline` on `main` after pull
 - Prepr (from `/myauditandfix` transcript): **completed+adjudicated** / **N/A** (docs-only) / **failed** (→ INCOMPLETE)
-- BugBot gate: passed / waived / N/A
+- BugBot gate: skipped (default) / explicitly triggered / passed / waived / N/A
 
 **INCOMPLETE ship** (push/PR/merge blocked) — lead with **INCOMPLETE**, list what finished (e.g. local commits), the exact blocker (audit gate / missing myaudit prepr / gh / network), and the next Matt action. Never imply GitHub is caught up.
 
@@ -156,6 +157,7 @@ Run shell steps with evidence; tag claims **verified** / **unverified** / **fail
 - Re-running `prepr_audit.py` inside `/commitprmerge` (prepr belongs to `/myauditandfix` only)
 - Claiming this command mechanically validates a prepr marker — it reuses transcript evidence; `push_audit_gate` on Green:Y is the mechanical gate
 - Opening a code PR without current `/myauditandfix` Green:Y + completed prepr prepare evidence
+- Auto-triggering BugBot (`bugbot run`, wait/poll, or default dispatch) — opt-in only via explicit Matt request or `/review-bugbot`
 
 ## See also
 

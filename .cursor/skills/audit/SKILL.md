@@ -47,7 +47,7 @@ Equivalent to: audit your work in this thread → mandatory report → surgical 
 | Process rules followed in this thread (dispatch, build gate, read-only) | Drive-by fixes beyond audit findings |
 | Plan / todo / approved-build scope completion (§4 Plan completion) | Items outside this thread's stated scope |
 
-**Method:** adversarial dual-critic → verifier pipeline with **`TRACK=session`** on every dispatch (see **Session track pipeline** below). Derive session file set from **this thread's tool history**, not `git diff` alone. **Bugbot:** default **off**; opt in only if Matt asks or (rare) security-sensitive session without explicit forbid. **Skip §1 graph orient** when the target is only this thread's local files.
+**Method:** adversarial dual-critic → verifier pipeline with **`TRACK=session`** on every dispatch (see **Session track pipeline** below). Derive session file set from **this thread's tool history**, not `git diff` alone. **Bugbot:** default **off**; opt in only when Matt explicitly asks. Security-sensitive work uses `security-review`, not an implicit BugBot dispatch. **Skip §1 graph orient** when the target is only this thread's local files.
 
 
 ### Session track pipeline (dual-critic → verifier)
@@ -119,9 +119,9 @@ Carry forward prior findings; note what changed since last audit.
 | Track | When | Method |
 |-------|------|--------|
 | **System** | Subsystem, hooks, memory, orchestration, multi-area | 2–4 parallel `Task(subagent_type: "explore", readonly: true)` — one scope each |
-| **Code** | Branch, PR, uncommitted diff, specific module | `bugbot` (+ `security-review` if security-sensitive or Matt asks) per review skills |
-| **Hybrid** | Large system with code surface | Parallel explore for architecture + bugbot on diff if one exists |
-| **Session** | `/myauditandfix`, `audit your work`, `session audit`, audit this thread | Dual `session-auditor` (`TRACK=session`, bug_hunt + claim_bust) → confirm-only `audit-verifier` → §4 report; `/myauditandfix` adds fix `audit-verifier` after report; bugbot opt-in only |
+| **Code** | Branch, PR, uncommitted diff, specific module | Session-auditor / explore + oracle as needed; **`bugbot` opt-in only** when Matt asks or uses `/review-bugbot` (+ `security-review` if security-sensitive or Matt asks) |
+| **Hybrid** | Large system with code surface | Parallel explore for architecture; **`bugbot` opt-in only** on diff when Matt asks or uses `/review-bugbot` |
+| **Session** | `/myauditandfix`, `audit your work`, `session audit`, audit this thread | Dual `session-auditor` (`TRACK=session`, bug_hunt + claim_bust) → confirm-only `audit-verifier` → §4 report; `/myauditandfix` adds fix `audit-verifier` after report; **`bugbot` opt-in only** |
 
 When ≥2 independent areas: prefer parallel Explore/Task via product Auto. Orchestrator synthesizes; subagents do not write files.
 
@@ -303,5 +303,5 @@ Omit empty Findings/Themes sections only when truly none. Do **not** omit §4.1�
 - Substituting bugbot-only output for the mandatory report sections
 - Solo-auditing in orchestrator thread instead of dual critics + verifier
 - Confirm+fix in a single `audit-verifier` Task dispatch
-- Defaulting bugbot on session track without Matt opt-in
+- Defaulting bugbot on any audit track (session, code, hybrid) without Matt opt-in — use `/review-bugbot` when he asks
 - Skipping parallel explore on multi-area system audits (serial read loops)
