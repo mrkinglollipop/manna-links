@@ -127,8 +127,8 @@ When continuing unpushed commits already on a feature branch, **stay on that bra
 8. **Merge gate (repo-specific)**
    - **iOS / native green lane (non-BugBot):** for iOS/macOS app ships, require session-scoped changes, a green local build oracle when the session touched native code, `/myauditandfix` prepr evidence from this transcript for code ships, and a human checkpoint before merge when the repo's ship norms require it. Do **not** open Memory BugBot runbooks from this command — BugBot stays opt-in only.
    - **BugBot default (all repos):** **skipped** unless Matt explicitly asked for BugBot in this thread or trailing text (e.g. "run bugbot", `/review-bugbot`). Do **not** post `bugbot run`, wait for BugBot, or require its review by default.
-   - **No `bugbot-reviewed` required check** (no `.github/workflows/bugbot-gate.yml` or ruleset does not block on it): `gh pr ready <N>` if draft, then `gh pr merge --merge --delete-branch`. BugBot ship line: **skipped (default)** or **N/A**.
-   - **Legacy `bugbot-reviewed` check blocks merge:** diagnose the workflow/check failure and retry only the current workflow when safe. A missing or failed compatibility check is infrastructure, not permission to trigger BugBot. Report **INCOMPLETE** with the exact check URL if it remains blocked. Do **not** auto-comment `bugbot run`, poll for BugBot, or suggest BugBot as the default remedy. If Matt explicitly requested BugBot, use `/review-bugbot` or his stated method. **Waiver** (`gh pr edit <N> --add-label bugbot-waived`) only when Matt explicitly authorized bypass in this thread; re-check until `CLEAN`, merge, remove label post-merge. Do not use `gh pr merge --admin` (rulesets ignore it).
+   - **No CI gate (HARD):** this workspace does **not** use GitHub Actions. Never wait on, poll, retry, or report a GitHub Actions check as a merge gate, and never add a workflow file. Verification comes from local oracles only (pytest, ruff, build/smoke scripts). Merge with `gh pr ready <N>` if draft, then `gh pr merge --merge --delete-branch`. BugBot ship line: **skipped (default)** or **N/A**.
+   - **If a ruleset still blocks on a legacy status check:** report **INCOMPLETE** with the check name and tell Matt to remove that ruleset requirement. Do **not** satisfy it by adding a workflow, auto-commenting `bugbot run`, or polling BugBot. Do not use `gh pr merge --admin` (rulesets ignore it).
 9. **Sync local main** — `git checkout main && git pull origin main`.
 
 Run shell steps with evidence; tag claims **verified** / **unverified** / **failed** only from output seen this session.
@@ -158,10 +158,10 @@ Run shell steps with evidence; tag claims **verified** / **unverified** / **fail
 - Claiming this command mechanically validates a prepr marker — it reuses transcript evidence; `push_audit_gate` on Green:Y is the mechanical gate
 - Opening a code PR without current `/myauditandfix` Green:Y + completed prepr prepare evidence
 - Auto-triggering BugBot (`bugbot run`, wait/poll, or default dispatch) — opt-in only via explicit Matt request or `/review-bugbot`
+- Treating a GitHub Actions check as a gate, reporting its status as ship evidence, or adding a workflow file — this workspace does not use GitHub Actions
 
 ## See also
 
 - `.cursor/rules/app-development.mdc` — app repo paths; prepr via `/myauditandfix`
-- `.github/workflows/bugbot-gate.yml` — optional compatibility check (v7 opt-in / fail-soft; never auto-triggers BugBot)
 - `.cursor/commands/myauditandfix.md` — session audit + prepr worktree oracle before ship
 - `.cursor/hooks/push_audit_gate.py` / `audit_marker.py` — push gate + stamp UX

@@ -3,11 +3,14 @@
 Primary consumer: ``/myauditandfix`` (``--worktree --prepare``). Prepare mode collects
 session-scoped diff input and emits a machine-readable bundle for native Task critics —
 no Cursor/Fleet dispatch at runtime. Full branch/worktree dispatch modes remain for
-backward compatibility (e.g. bugbot-gate ``--post``).
+backward compatibility.
+
+This workspace does not use GitHub Actions, so no CI consumes this script's output or its
+``--post`` PR comment; the comment is informational only.
 
 Modes:
 - default (branch): audit committed ``base...HEAD``; stamp ``/tmp/.adversarial_audit_<HEAD>``
-  on a clean result; optional ``--post`` PR comment for bugbot-gate. ``--path`` is an
+  on a clean result; optional informational ``--post`` PR comment. ``--path`` is an
   optional filter. Behavior is unchanged from the pre-worktree version, including the
   truncate-and-dispatch handling of oversized diffs.
 - ``--worktree``: session-scoped audit. Requires at least one ``--path``. Collection and
@@ -1099,9 +1102,9 @@ def main() -> None:
                 pr_num = None
         if pr_num:
             if waiving:
-                # Distinct prefix so bugbot-gate CI (which regex-matches "adversarial-audit-ok:")
-                # does NOT treat a WAIVED run as clean — a waived merge must use the bugbot-waived
-                # label (the explicit CI override), never auto-clear on open MEDIUM findings.
+                # Distinct prefix so a reader scanning for "adversarial-audit-ok:" does NOT
+                # treat a WAIVED run as clean — waiving requires Matt's explicit authorization
+                # and must never auto-clear on open MEDIUM findings.
                 body = (
                     f"adversarial-audit-waived:{HEAD}\n\n"
                     f"Pre-PR adversarial audit: {len(medium_block)} MEDIUM finding(s) "
