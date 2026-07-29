@@ -176,9 +176,12 @@ Blockers get one line each after the block when count > 0.
 - `/iterate` stamps PENDING + iterate-specific PENDING; novel run-log paths only
   (contract_guard). Novel product files still need Deliverable Contract.
 - Hired workers **inherit** the parent chat's `/iterate` authorization: contract_guard
-  resolves a Task child's parent transcript for contract, escape phrase, and slash
-  command. A worker returning BLOCKED for "no build-auth" on an **existing** file is a
-  harness bug to report with the deny reason — not a reason to quietly solo.
+  resolves a Task child's parent transcript for contract, escape phrase (must appear
+  in Matt's latest user message), and slash command. An agent's **own**-transcript
+  escape phrase stays sticky across all its user messages; only **inherited** escape
+  is latest-message-only. A worker returning BLOCKED for
+  "no build-auth" on an **existing** file is a harness bug to report with the deny
+  reason — not a reason to quietly solo.
 - Run logs may live in the target repo even when the hook cwd is the Cursor workspace
   root; `.cursor/state/iterate/**` under any git top-level is allowlisted.
 - Hire failure is reportable: name the tool, subagent type, and verbatim deny reason in
