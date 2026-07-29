@@ -7,11 +7,11 @@ HONEST CAVEAT: Deep drawdowns DO happen. CINF fell ~63% and took ~6.6 years to
 recover. Covered-call premium does NOT protect against that magnitude of decline.
 The edge is recovery-certainty plus getting paid to wait — not downside protection.
 """
+
 from __future__ import annotations
 
 import argparse
 import csv
-import json
 import math
 import os
 import sqlite3
@@ -48,6 +48,7 @@ VRP_IV_RANK: Optional[float] = None
 # ---------------------------------------------------------------------------
 # Reference math (verified against local FMP DBs)
 # ---------------------------------------------------------------------------
+
 
 def ann_vol(closes: Sequence[float]) -> Optional[float]:
     rets = [
@@ -138,6 +139,7 @@ def beta(
 # Dividend run-rate streak
 # ---------------------------------------------------------------------------
 
+
 def annual_run_rates(div_rows: Sequence[Tuple[str, float]]) -> Dict[int, float]:
     """Annual run-rate from median regular payment; drop specials >2.5x year median."""
     by_year: Dict[int, List[Tuple[str, float]]] = defaultdict(list)
@@ -202,9 +204,8 @@ def survived_recession(
 # Price-derived metrics
 # ---------------------------------------------------------------------------
 
-def pct_pos_periods(
-    series: Sequence[Tuple[str, float]], period_len: int
-) -> Optional[float]:
+
+def pct_pos_periods(series: Sequence[Tuple[str, float]], period_len: int) -> Optional[float]:
     """period_len=4 for years, 7 for months (YYYY-MM)."""
     ends: Dict[str, Tuple[str, float]] = {}
     for d, v in series:
@@ -217,7 +218,9 @@ def pct_pos_periods(
     return pos / (len(ordered) - 1)
 
 
-def above_200dma_frac(closes: Sequence[Tuple[str, float]], lookback_days: int = 1260) -> Optional[float]:
+def above_200dma_frac(
+    closes: Sequence[Tuple[str, float]], lookback_days: int = 1260
+) -> Optional[float]:
     if len(closes) < 200:
         return None
     subset = closes[-lookback_days:] if len(closes) > lookback_days else closes
@@ -226,7 +229,6 @@ def above_200dma_frac(closes: Sequence[Tuple[str, float]], lookback_days: int = 
     above = 0
     total = 0
     prices = [v for _, v in subset]
-    dates = [d for d, _ in subset]
     for i in range(199, len(prices)):
         ma = sum(prices[i - 199 : i + 1]) / 200
         if prices[i] > ma:
@@ -277,6 +279,7 @@ def compute_recovered(
 # ---------------------------------------------------------------------------
 # Scoring helpers
 # ---------------------------------------------------------------------------
+
 
 def band_score(
     val: Optional[float],
@@ -398,6 +401,7 @@ def verdict(score: float) -> str:
 # Hard gates
 # ---------------------------------------------------------------------------
 
+
 def check_gates(m: Dict[str, Any]) -> List[Tuple[str, bool, str]]:
     results: List[Tuple[str, bool, str]] = []
 
@@ -451,6 +455,7 @@ def passes_all_gates(m: Dict[str, Any]) -> bool:
 # ---------------------------------------------------------------------------
 # Data loading
 # ---------------------------------------------------------------------------
+
 
 class FMPStore:
     def __init__(self, fmp_dir: str):
@@ -515,9 +520,7 @@ class FMPStore:
         if self._spy_by_date is not None:
             return self._spy_by_date
         conn = self._connect("price_history.sqlite")
-        cur = conn.execute(
-            "SELECT date, close FROM daily_prices WHERE ticker='SPY' ORDER BY date"
-        )
+        cur = conn.execute("SELECT date, close FROM daily_prices WHERE ticker='SPY' ORDER BY date")
         self._spy_by_date = {str(d)[:10]: float(c) for d, c in cur if c is not None}
         conn.close()
         return self._spy_by_date
@@ -581,6 +584,7 @@ class FMPStore:
 # ---------------------------------------------------------------------------
 # Per-ticker evaluation
 # ---------------------------------------------------------------------------
+
 
 def evaluate_ticker(
     ticker: str,
@@ -679,6 +683,7 @@ def evaluate_ticker(
 # Similarity distance
 # ---------------------------------------------------------------------------
 
+
 def impute_medians(rows: Sequence[Dict[str, Any]], fields: Sequence[str]) -> Dict[str, float]:
     medians: Dict[str, float] = {}
     for f in fields:
@@ -705,7 +710,10 @@ def zscore_vector(
             sd = 1.0
         means.append(mu)
         stds.append(sd)
-    z_rows = [[(imputed[i][j] - means[j]) / stds[j] for j in range(len(fields))] for i in range(len(imputed))]
+    z_rows = [
+        [(imputed[i][j] - means[j]) / stds[j] for j in range(len(fields))]
+        for i in range(len(imputed))
+    ]
     return z_rows, means, stds
 
 
@@ -731,6 +739,7 @@ def assign_distances(
 # ---------------------------------------------------------------------------
 # Universe scan
 # ---------------------------------------------------------------------------
+
 
 def build_universe(store: FMPStore) -> List[str]:
     divs = store.dividend_rows()
@@ -782,6 +791,7 @@ def run_screen(
 # Output formatting
 # ---------------------------------------------------------------------------
 
+
 def fmt_pct(v: Optional[float], decimals: int = 1) -> str:
     if v is None:
         return "-"
@@ -804,14 +814,20 @@ def print_scorecard(m: Dict[str, Any]) -> None:
         ("pct_pos_years", fmt_pct(m.get("pct_pos_years")) + "%"),
         ("pct_pos_months", fmt_pct(m.get("pct_pos_months")) + "%"),
         ("above_200dma_frac", fmt_pct(m.get("above_200dma_frac")) + "%"),
-        ("jump_days_per_yr", f"{m.get('jump_days_per_yr'):.1f}" if m.get("jump_days_per_yr") is not None else "-"),
+        (
+            "jump_days_per_yr",
+            f"{m.get('jump_days_per_yr'):.1f}" if m.get("jump_days_per_yr") is not None else "-",
+        ),
         ("div_streak_yrs", str(m.get("div_streak_yrs"))),
         ("survived_recession", str(m.get("survived_recession"))),
         ("fcf_yield", fmt_pct(m.get("fcf_yield")) + "%"),
         ("roe", fmt_pct(m.get("roe")) + "%"),
         ("payout_ratio", fmt_pct(m.get("payout_ratio")) + "%"),
-        ("debt_to_equity", f"{m.get('debt_to_equity'):.2f}" if m.get("debt_to_equity") is not None else "-"),
-        ("market_cap", f"${m.get('market_cap')/1e9:.2f}B" if m.get("market_cap") else "-"),
+        (
+            "debt_to_equity",
+            f"{m.get('debt_to_equity'):.2f}" if m.get("debt_to_equity") is not None else "-",
+        ),
+        ("market_cap", f"${m.get('market_cap') / 1e9:.2f}B" if m.get("market_cap") else "-"),
         ("div_yield", fmt_pct(m.get("div_yield")) + "%"),
         ("price_rows", str(m.get("price_rows"))),
         ("last_close", f"${m.get('last_close'):.2f}" if m.get("last_close") else "-"),
@@ -861,11 +877,11 @@ def print_table(rows: Sequence[Dict[str, Any]], title: str, sort_key: str, top: 
             f"{r['score_a']:4.1f} {r['score_b']:4.1f} {r['score_c']:4.1f} "
             f"{r['score_d']:4.1f} {r['score_e']:4.1f} "
             f"{r.get('div_streak_yrs') or 0:6d} "
-            f"{(r.get('vol_252') or 0)*100:6.1f} "
+            f"{(r.get('vol_252') or 0) * 100:6.1f} "
             f"{(r.get('beta_5y') if r.get('beta_5y') is not None else 0):5.2f} "
-            f"{(r.get('price_cagr') or 0)*100:6.1f} "
-            f"{(r.get('max_drawdown') or 0)*100:7.1f} "
-            f"{r.get('verdict',''):<7}"
+            f"{(r.get('price_cagr') or 0) * 100:6.1f} "
+            f"{(r.get('max_drawdown') or 0) * 100:7.1f} "
+            f"{r.get('verdict', ''):<7}"
         )
 
 
@@ -883,6 +899,7 @@ def write_csv(path: str, rows: Sequence[Dict[str, Any]]) -> None:
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
+
 
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Fortress Compounder Screener (CINF archetype)")
@@ -906,7 +923,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             import numpy as np  # noqa: F401
             import pandas as pd  # noqa: F401
         except ImportError:
-            print("Warning: --fast requested but numpy/pandas unavailable; using stdlib.", file=sys.stderr)
+            print(
+                "Warning: --fast requested but numpy/pandas unavailable; using stdlib.",
+                file=sys.stderr,
+            )
 
     store = FMPStore(fmp_dir)
     try:
@@ -934,7 +954,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print_scorecard(m)
         return 0
 
-    results = run_screen(store, anchor=args.anchor.upper(), max_tickers=args.max_tickers, min_score=args.min_score)
+    results = run_screen(
+        store, anchor=args.anchor.upper(), max_tickers=args.max_tickers, min_score=args.min_score
+    )
     print(f"\nFortress screen: {len(results)} names passed all gates (FMP dir: {fmp_dir})")
     print_table(results, f"Top {args.top} by Fortress Score", "fortress_score", args.top)
     print_table(results, "Top 25 by cinf_distance (nearest neighbors)", "cinf_distance", 25)

@@ -14,6 +14,7 @@ through the GFC window?
 What this CANNOT prove: true population base rates — delisted/bankrupt names are
 absent from the database by construction (survivor-only universe).
 """
+
 from __future__ import annotations
 
 import argparse
@@ -22,7 +23,6 @@ import os
 import sqlite3
 import statistics
 import sys
-from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
@@ -69,13 +69,31 @@ def verdict_backtest(raw_score: float) -> str:
         return "FAIR"
     return "WEAK"
 
+
 NAMED_COHORT = [
-    "CINF", "PG", "KO", "MMC", "GE", "BAC", "KEY", "CMA", "RF",
-    "FITB", "USB", "STT", "PFE", "BBT",
+    "CINF",
+    "PG",
+    "KO",
+    "MMC",
+    "GE",
+    "BAC",
+    "KEY",
+    "CMA",
+    "RF",
+    "FITB",
+    "USB",
+    "STT",
+    "PFE",
+    "BBT",
 ]
 
 ORACLE_TICKERS = {
-    "CINF": {"div_cut": False, "recovered_by_2014": True, "fwd_max_dd_lo": -0.70, "fwd_max_dd_hi": -0.55},
+    "CINF": {
+        "div_cut": False,
+        "recovered_by_2014": True,
+        "fwd_max_dd_lo": -0.70,
+        "fwd_max_dd_hi": -0.55,
+    },
     "GE": {"div_cut": True, "recovered_by_2014": False, "fwd_max_dd_hi": -0.80},
     "BAC": {"div_cut": True, "recovered_by_2014": False, "fwd_max_dd_hi": -0.85},
     "KEY": {"div_cut": True, "recovered_by_2014": False},
@@ -94,9 +112,7 @@ def connect_db(name: str, fmp_dir: str) -> sqlite3.Connection:
 
 def load_spy(fmp_dir: str) -> Dict[str, float]:
     conn = connect_db("price_history.sqlite", fmp_dir)
-    cur = conn.execute(
-        "SELECT date, close FROM daily_prices WHERE ticker='SPY' ORDER BY date"
-    )
+    cur = conn.execute("SELECT date, close FROM daily_prices WHERE ticker='SPY' ORDER BY date")
     spy = {str(d)[:10]: float(c) for d, c in cur if c is not None}
     conn.close()
     return spy
@@ -105,21 +121,21 @@ def load_spy(fmp_dir: str) -> Dict[str, float]:
 def build_universe(fmp_dir: str) -> List[str]:
     """Survivor-only dividend cohort with usable pre-2007 history.
 
-    Requires >=500 total price rows (DB depth), >=250 rows on/before ASOF
-  (local FMP history starts ~2006-06-29 → ~379 pre-2007 rows for most names),
-    and >=1 dividend on/before ASOF.
+      Requires >=500 total price rows (DB depth), >=250 rows on/before ASOF
+    (local FMP history starts ~2006-06-29 → ~379 pre-2007 rows for most names),
+      and >=1 dividend on/before ASOF.
     """
     ph = connect_db("price_history.sqlite", fmp_dir)
     dv = connect_db("dividends.sqlite", fmp_dir)
     total_ok = {
         t
-        for t, in ph.execute(
+        for (t,) in ph.execute(
             "SELECT ticker FROM daily_prices GROUP BY ticker HAVING COUNT(*) >= 500"
         )
     }
     pre_ok = {
         t
-        for t, in ph.execute(
+        for (t,) in ph.execute(
             "SELECT ticker FROM daily_prices "
             "WHERE date <= ? GROUP BY ticker HAVING COUNT(*) >= 250",
             (ASOF,),
@@ -127,7 +143,7 @@ def build_universe(fmp_dir: str) -> List[str]:
     }
     div_ok = {
         t
-        for t, in dv.execute(
+        for (t,) in dv.execute(
             "SELECT DISTINCT ticker FROM dividends "
             "WHERE date <= ? AND COALESCE(adj_dividend, dividend) IS NOT NULL "
             "AND COALESCE(adj_dividend, dividend) > 0",
@@ -377,8 +393,13 @@ def median_or_none(vals: Sequence[float]) -> Optional[float]:
 def bucket_stats(rows: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
     n = len(rows)
     if n == 0:
-        return {"n": 0, "div_cut_pct": None, "median_fwd_max_dd": None,
-                "recovered_pct": None, "median_months_to_recover": None}
+        return {
+            "n": 0,
+            "div_cut_pct": None,
+            "median_fwd_max_dd": None,
+            "recovered_pct": None,
+            "median_months_to_recover": None,
+        }
     cuts = sum(1 for r in rows if r.get("div_cut"))
     recs = sum(1 for r in rows if r.get("recovered_by_2014"))
     dds = [r["fwd_max_dd"] for r in rows if r.get("fwd_max_dd") is not None]
@@ -548,7 +569,9 @@ def write_csv(path: str, rows: Sequence[Dict[str, Any]]) -> None:
 
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     default_out = str(_SCRIPT_DIR.parent / "scratchpad" / "backtest_asof2007.csv")
-    p = argparse.ArgumentParser(description="Fortress screener GFC out-of-sample backtest (as-of 2007)")
+    p = argparse.ArgumentParser(
+        description="Fortress screener GFC out-of-sample backtest (as-of 2007)"
+    )
     p.add_argument("--fmp-dir", default=None)
     p.add_argument("--out", default=default_out)
     p.add_argument("--max-tickers", type=int, default=None, help="Debug: cap universe size")
