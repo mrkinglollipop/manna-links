@@ -82,6 +82,38 @@ Template: `references/run-log-template.md`.
 - Cap stop: log `lenses_skipped`; green iff zero Status=`open` **HIGH/MEDIUM**
   (LOW may remain `logged`/`open` without blocking green). TodoWrite mirrors open H/M.
 
+### Round advancement (HARD — same turn, no handoff)
+
+The mission is **one turn**. After each round's recheck, evaluate the exit test and
+act immediately — do not end the turn, do not ask Matt to say "continue", never
+close with "next I'll run round 2".
+
+**Exit test (in order):**
+
+1. Green per §6 → stop, emit final summary.
+2. Global round 4 used, or every requested lens exhausted its 2 cycles → cap-stop, emit final summary.
+3. All remaining open items are Matt-only blockers → stop-early, emit final summary.
+4. Otherwise → print the Round report, then **start the next round in this same turn**
+   (next lens if the current lens hit its 2-cycle cap or produced no open H/M; same
+   lens otherwise).
+
+A turn that ends with open HIGH/MEDIUM, rounds remaining, and no Matt blocker is a
+failed mission — not a checkpoint.
+
+### Round report (mandatory, every round)
+
+Print after every round, before starting the next. Same block appends to the run log.
+
+```markdown
+### Round <n> — lens=<lens> · mode=<fix|find-only>
+- **Found:** <h>H / <m>M / <l>L — <ids>
+- **Fixed:** <id — one line each; `none` if nothing fixable>
+- **Deferred / blocked:** <id — reason; `none`>
+- **Evidence:** <oracle, smoke, screenshot, a11y + result; `unverified — would verify by X`>
+- **Open after round:** <h>H / <m>M
+- **Next:** round <n+1> lens=<lens> | green | cap-stop | stop-early (Matt blockers)
+```
+
 ### Per find pass
 
 1. Read `lenses/<lens>.md`.
@@ -118,12 +150,39 @@ If polish fixes ran and `working` was in requested set (or primary path touched)
 
 **Stop-early:** remaining items all Matt-only.
 
-## 7. Loop summary (parent)
+## 7. Mission summary (parent, once — after the loop stops)
 
-Rounds used, green Y/N, lenses run/skipped, run-log path, blockers. Flavor-OFF for log/skill; Matt chat may use Wade.
+Emitted once when the exit test fires, after the last Round report. Flavor-OFF for
+log/skill; Matt chat may use Wade over the same facts. Never in place of the Round
+reports — Matt gets both the per-round trail and this closing block.
+
+```markdown
+## Iterate mission summary
+- **Target:** <repo/path> · class=<detected class>
+- **Rounds used:** <n> / 4 · per-lens cycles: <lens=n, …>
+- **Lenses run:** <list> · **skipped:** <list or none>
+- **Green:** Y|N — <one-line reason / stop trigger>
+- **Fixed:** <count> — <ids>
+- **Deferred:** <count> · **Blocked on Matt:** <count> — <ids>
+- **Evidence:** <oracle / smoke / visual results, or explicit unverified>
+- **Run log:** <absolute path>
+```
+
+Blockers get one line each after the block when count > 0.
 
 ## FAQ
 
 - Product permission cards cannot be eliminated — request `required_permissions` correctly.
 - `/iterate` stamps PENDING + iterate-specific PENDING; novel run-log paths only
   (contract_guard). Novel product files still need Deliverable Contract.
+- Hired workers **inherit** the parent chat's `/iterate` authorization: contract_guard
+  resolves a Task child's parent transcript for contract, escape phrase (must appear
+  in Matt's latest user message), and slash command. An agent's **own**-transcript
+  escape phrase stays sticky across all its user messages; only **inherited** escape
+  is latest-message-only. A worker returning BLOCKED for
+  "no build-auth" on an **existing** file is a harness bug to report with the deny
+  reason — not a reason to quietly solo.
+- Run logs may live in the target repo even when the hook cwd is the Cursor workspace
+  root; `.cursor/state/iterate/**` under any git top-level is allowlisted.
+- Hire failure is reportable: name the tool, subagent type, and verbatim deny reason in
+  the mission summary. Silent solo hides harness regressions.
