@@ -21,7 +21,7 @@ description: Session audit (this thread) with mandatory report, then loop audit�
 
 **Depth:** thorough. **Track:** **`TRACK=session`** on every critic and verifier dispatch (§0 session audit in SKILL). Skip graph orient (§1) when target is only this thread's local files.
 
-**Bugbot:** default **off** for session track. Opt in only if Matt's prompt/trailing text asks for it, or (rare) when the session is clearly security-sensitive and Matt did not forbid it.
+**Bugbot:** default **off** for session track. Opt in **only** when Matt's prompt or trailing text explicitly asks for BugBot / `/review-bugbot`. No implicit carve-outs (including security-sensitive sessions).
 
 ## Artifact pack (orchestrator → critics + verifier)
 
