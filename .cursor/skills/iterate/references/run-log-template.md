@@ -29,11 +29,17 @@
 
 ## Round log
 
-### Round 1 — lens=working
+One block per round, same fields as the Matt-facing Round report (SKILL.md §5).
 
-- Found / fixed / deferred / logged counts
-- Drive actions announced
-- Oracle notes
+### Round 1 — lens=working · mode=fix
+
+- **Found:** 0H / 0M / 0L — ids
+- **Fixed:** id — one line each (or none)
+- **Deferred / blocked:** id — reason (or none)
+- **Evidence:** oracle / smoke / screenshot + result (or unverified — would verify by X)
+- **Open after round:** 0H / 0M
+- **Next:** round 2 lens=… | green | cap-stop | stop-early
+- Drive actions announced: …
 
 ## Deferred (over budget)
 

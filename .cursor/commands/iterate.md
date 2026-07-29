@@ -7,7 +7,9 @@ description: Autonomous improve loop — lenses working/bugs/gaps/polish, todos 
 
 **Authoritative contract:** `.cursor/skills/iterate/SKILL.md`. This command **authorizes the fix phase** (unless trailing `find-only` / `audit-only`).
 
-**Not** `/myauditandfix` (claims/correctness). Iterate = constructive improve.
+Iterate = constructive improve. It is **not** the session-audit command (claims and
+correctness). Command docs are injected into the user turn, so this file never spells
+sibling slash names — that made every iterate turn read as an audit session.
 
 ## Where this command lives
 
@@ -34,8 +36,10 @@ bash "/Volumes/Cloud Storage/Claude/.cursor/scripts/sync-harness.sh"
 
 1. Resolve host + `$REPO_ROOT` (git top-level of target).
 2. Dispatch **once** to `iterate` agent per `.cursor/dispatch-settings.yaml` `hosts.<host>.iterate` (model omit/inherit). If hire fails → run skill solo.
-3. Agent owns lens loop, todos, run log, fixes. Parent: desktop-drive consent if needed; final Loop summary + **run-log path**.
+3. Agent owns lens loop, todos, run log, fixes. Parent: desktop-drive consent if needed; final mission summary + **run-log path**.
 4. Lens skills read **inline** — no nested Task per lens.
+5. **One turn, many rounds.** Round report after every round; next round starts in the
+   same turn until green, cap exhaustion, or Matt-only blockers (SKILL §5 exit test).
 
 ## Host dispatch
 
