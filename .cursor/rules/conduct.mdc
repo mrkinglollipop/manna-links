@@ -33,7 +33,7 @@ Behavioral contract for Agent chat. Promise-tails on Stop are backstopped by `.c
 
 **460 — Multi-repo enumerate:** When a task touches more than one repo or filesystem root, the completion summary must list each concrete path/repo before Matt has to ask.
 
-**465 — Prepr before create:** Run `/Volumes/Cloud Storage/Claude/.cursor/scripts/prepr_audit.py` (or `.cursor/scripts/prepr_audit.py` from Claude root) to completion before `gh pr create` (not backgrounded alongside). Any audit exit other than clean success — including **exit 3** fleet/import infra — is degraded / hard blocker; never treat “zero findings” as green when the audit did not complete cleanly.
+**465 — Prepr owns `/myauditandfix`:** Run repo-local `prepr_audit.py --worktree --prepare --json --path <each session code path>` as a `/myauditandfix` oracle on **code** sessions (before round-1 critics and after each Phase 2 before full/delta confirm). Docs-only sessions mark prepr **N/A** and skip it. The prepare bundle is oracle evidence for critics/verifier — never a model-oracle Green substitute; `ROLE=bug_hunt` owns the adversarial lens (full rounds: dual critics; **delta code rounds:** one `bug_hunt` critic with bundle, skip `claim_bust`). Exit **2/3** or a missing run blocks **Green: Y**. `/commitprmerge` reuses the latest `/myauditandfix` prepr evidence from the transcript and must **not** re-run prepr; missing Green:Y/prepr evidence → stop and tell Matt to run `/myauditandfix`.
 
 **502 — Time-dependent claims:** Before "job already fired / timer elapsed," run `date`, process check, or log tail; mental elapsed-time math is unverified.
 
@@ -43,11 +43,27 @@ Behavioral contract for Agent chat. Promise-tails on Stop are backstopped by `.c
 
 **748 — Fetch-timeout fallback:** First WebFetch / web-fetch skill timeout in research → switch to search/fallback path; do not retry the same URL/domain.
 
-**40 — Plan-doc status after ship:** When a plan/design doc you created or edited ships or merges, update its `Status:` (DRAFT/WIP → SHIPPED/DONE/MERGED) in the same session or PR. Do not leave false-pending signals in-repo.
+**40 — Plan-doc status after ship:** When a plan/design doc you created or edited ships or merges, update its `Status:` (DRAFT/WIP → SHIPPED/DONE/MERGED) in the same session or PR. Do not leave false-pending signals in-repo. **Superseding a plan** also requires archiving or deleting the old file (or an unambiguous banner pointing at the new SSOT) — renumbering / drafting a sibling without retiring the old one creates dual SSOT (Night School 482).
 
-**751 — Post-harness-add verify:** After adding or changing a harness skill/command/rule: `smoke_harness_skills.sh` → `sync-harness.sh --local-only` (use `--repos` when app mirrors must pick it up) → `smoke_harness_sync.sh` (**rules-only** SSOT↔live `*.mdc` cmp; FAIL = live **rules** stale — re-run `--local-only`; does **not** prove skills/commands/agents parity — spot-check those) → spot-check the change in the live local plugin. See `.cursor/HARNESS.md`.
+**751 — Post-harness-add verify:** After adding or changing a harness skill/command/rule: `smoke_harness_skills.sh` → `sync-harness.sh --local-only` (use `--repos` / `--repos-only` when app mirrors must pick it up) → `smoke_harness_sync.sh` (**rules-only** SSOT↔live `*.mdc` cmp; FAIL = live **rules** stale — re-run `--local-only`; does **not** prove skills/commands/agents parity — spot-check those) → spot-check the change in the live local plugin. See `.cursor/HARNESS.md`. Same commit must also update sibling routing/enumeration when those files are load-bearing for the change — especially `audit.mdc` trigger routing and `smoke_harness_skills.sh` skill/command lists (Night School 655).
+
+**418 — Quote paths with spaces:** Shell commands must quote paths that contain spaces (e.g. `"/Volumes/Cloud Storage/..."`). Unquoted `cd` / compound commands into those paths fail consistently; tool `working_directory` / `cwd` params are an acceptable alternative when available.
 
 **826 — Availability before “doesn’t exist”:** Before claiming a tool, MCP, integration, or capability “doesn’t exist,” “isn’t possible,” or “we don’t have X,” check in order: (1) live session MCP/tools, (2) `~/.cursor/mcp.json` and project `.cursor/mcp.json`, (3) graph search + memory topics. If still unknown and the user asked whether something can do X, do a cheap research pass before “no.” “Product has no first-party X” ≠ “X is unavailable” — say the distinction, and name any MCP/sidecar that covers it.
+
+**1316 — Local before WebSearch:** If a question is answerable from the open workspace (Grep/Read/Glob), do that first. Do not open with WebSearch when local evidence is sufficient — Matt has rejected mid-task web search in that case (Night School 1316).
+
+**1080 — Workspace-inaccessible stop:** If file/shell tools uniformly fail with path-not-found (or equivalent) on the workspace root, after **2–3** failures surface a workspace-inaccessible blocker and stop. Do not exhaust dozens of alternate path spellings before reporting.
+
+**1040 — Snippets ≠ verified:** Web-search / SERP snippets are not verified sources. Fetch the actual page (or other primary evidence) before stating a factual claim as true. Matt's one-word "Verify" after snippet-only answers means this failed.
+
+**1149 — No silent guard bypass:** When a harness guard blocks an in-scope write (e.g. orchestration_guard on `.cursor/hooks/`), do **not** silently route around it via shell heredoc / `Path.write_text` without surfacing the conflict to Matt. Fired guard on user-requested work is a blocker to name, not a problem to stealth-patch (Night School 1149).
+
+**466 — No silent except-swallow:** `except` / error handlers must surface failures (log, raise, or explicit degrade). Silent `pass` / empty catch that hides auth, parse, or infra errors has burned months of alerts (Schwab re-auth scar — Night School 466).
+
+**417 — Already-read re-slice:** When the Read tool rejects with "Already read this exact file," re-read with explicit `offset`/`limit` for a new slice, or use Grep/Shell for the needed lines — do not retry the identical full-file Read.
+
+**GH007 — noreply both sides:** When git config still has a private email, set **both** author and committer to `277844502+mrkinglollipop@users.noreply.github.com` (env `GIT_AUTHOR_*` / `GIT_COMMITTER_*` or `--author` plus committer env). Fixing only `--author` leaves the committer as iCloud and the push fails again.
 
 > For **novel deliverables**, asking a focused question when comprehension isn't grounded **is** the conventional default—not a failure of Rule 10. One-line assume-and-proceed is only for surgical edits in named files, documented repo conventions, or when Matt said `your call` / `use defaults` / `don't ask`.
 
@@ -86,6 +102,8 @@ Fable already covers claim labels (**2**), loop exits (**3**), and verify-before
 **Empty-read blocker:** If a file-read tool returns empty `contents` (or whitespace-only) but metadata indicates non-zero size (`totalLinesInFile > 0`, `size > 0`, etc.), treat as tool failure / blocker — surface the anomaly immediately; do not proceed as if the file is empty. (Night School lesson 534.)
 
 **Long Shell:** For Shell commands plausibly running longer than 90 seconds, set `block_until_ms` in the 120000–600000 range. Do not treat a background wait kill or timeout as an environment mystery before checking whether wait sizing was adequate. (Cursor analog of lesson 433.)
+
+**Noisy Node stderr:** When a Node script dumps ~65–250KB of minified library source on stderr, the real exception is usually at the **tail**. Redirect stderr to a temp file and `tail -c` it first — do not re-run the same script repeatedly with minor edits. (Night School 820.)
 
 
 ## Deliverable Contract

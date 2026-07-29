@@ -122,13 +122,10 @@ When continuing unpushed commits already on a feature branch, **stay on that bra
 3. **Stage + security gate** — stage in-scope files; `git diff --cached --name-only`; abort on secrets or unintended paths. (Skip if continue-from-push.)
 4. **Commit** — `git commit -m "<type>: <summary>"` where `<type>` is `memory` for claude-os-workspace memory-only, else `feat`, `fix`, or `chore` inferred from the diff. Summary from trailing text or diff. (Skip if continue-from-push.)
 5. **Push** — `git push -u origin HEAD`. On `push_audit_gate` deny → **INCOMPLETE** (commits local only); tell Matt to finish `/myauditandfix` green or bypass; **do not** claim shipped.
-6. **Pre-PR audit (conditional)** — when the diff vs `origin/main` includes code files (py, ts, swift, etc.):
-   - Run `python3 .cursor/scripts/prepr_audit.py` from repo root if that path exists
-   - Else run `python3 "/Volumes/Cloud Storage/Claude/.cursor/scripts/prepr_audit.py"` with cwd = repo root
-   - Fix blocking findings or stop. After push, if clean: `--post`
+6. **Prepr evidence reuse (code ships)** — when shipping code files (py, ts, swift, etc.): **do not** run `prepr_audit.py`. Read the latest `/myauditandfix` prepr prepare evidence from **this conversation's transcript** (completed `--worktree --prepare` run, fingerprint, bundle attached to critics). This step is a **transcript read, not a mechanical marker check** — the mechanical gate is `push_audit_gate` on `Green: Y` at step 5. If the transcript has no current Green:Y with completed prepr prepare evidence for the code being shipped → **INCOMPLETE**; tell Matt to run `/myauditandfix` (prepr is that command's oracle, not commit/PR). Docs-only / no-code ships: prepr **N/A**.
 7. **Open PR** — `gh pr create --base main --title "<type>: <summary>" --body "…"`. Cloud Agent fallback: `ManagePullRequest` `action: create_pr` when `gh pr create` fails with integration permissions.
 8. **Merge gate (repo-specific)**
-   - **Green lane:** see `/Volumes/Cloud Storage/Memory/conversations/topics/ios-ship-runbook.md` § Green lane (session scope, build green, prepr_audit, BugBot, human checkpoint).
+   - **Green lane:** see `/Volumes/Cloud Storage/Memory/conversations/topics/ios-ship-runbook.md` § Green lane (session scope, build green, myaudit prepr evidence from transcript, BugBot, human checkpoint).
    - **No** `.github/workflows/bugbot-gate.yml` (e.g. claude-os-workspace): `gh pr ready <N>` if draft, then `gh pr merge --merge --delete-branch`
    - **Has bugbot-gate:** check `gh pr view --json mergeable,mergeStateStatus`. If `BLOCKED` on `bugbot-reviewed`: wait for BugBot review of HEAD, or comment `bugbot run`, or — only when Matt explicitly authorized bypass in this thread — `gh pr edit <N> --add-label bugbot-waived`, re-check until `CLEAN`, merge, remove label post-merge. Do not use `gh pr merge --admin` (rulesets ignore it).
 9. **Sync local main** — `git checkout main && git pull origin main`.
@@ -142,10 +139,10 @@ Run shell steps with evidence; tag claims **verified** / **unverified** / **fail
 - Branch + commit SHA
 - PR URL + merge state (**MERGED** or open + why not merged)
 - `git log -1 --oneline` on `main` after pull
-- Pre-PR audit: ran / skipped / failed
+- Prepr (from `/myauditandfix` transcript): **completed+adjudicated** / **N/A** (docs-only) / **failed** (→ INCOMPLETE)
 - BugBot gate: passed / waived / N/A
 
-**INCOMPLETE ship** (push/PR/merge blocked) — lead with **INCOMPLETE**, list what finished (e.g. local commits), the exact blocker (audit gate / gh / network), and the next Matt action. Never imply GitHub is caught up.
+**INCOMPLETE ship** (push/PR/merge blocked) — lead with **INCOMPLETE**, list what finished (e.g. local commits), the exact blocker (audit gate / missing myaudit prepr / gh / network), and the next Matt action. Never imply GitHub is caught up.
 
 ## Anti-patterns
 
@@ -156,10 +153,13 @@ Run shell steps with evidence; tag claims **verified** / **unverified** / **fail
 - Claiming "committed" / "done" when push or PR/merge did not finish
 - Stopping at "Nothing to ship" when this conversation already has unpushed commits on the feature branch
 - Force-pushing `main` or merging without Matt naming explicit path overrides for out-of-scope files
+- Re-running `prepr_audit.py` inside `/commitprmerge` (prepr belongs to `/myauditandfix` only)
+- Claiming this command mechanically validates a prepr marker — it reuses transcript evidence; `push_audit_gate` on Green:Y is the mechanical gate
+- Opening a code PR without current `/myauditandfix` Green:Y + completed prepr prepare evidence
 
 ## See also
 
-- `.cursor/rules/app-development.mdc` — app repo paths, prepr_audit
+- `.cursor/rules/app-development.mdc` — app repo paths; prepr via `/myauditandfix`
 - `/Volumes/Cloud Storage/Memory/conversations/topics/claude-os-pr-bugbot-gate.md` — bugbot-gate + `bugbot-waived`
-- `.cursor/commands/myauditandfix.md` — audit before ship when unsure
+- `.cursor/commands/myauditandfix.md` — session audit + prepr worktree oracle before ship
 - `.cursor/hooks/push_audit_gate.py` / `audit_marker.py` — push gate + stamp UX
