@@ -7,7 +7,7 @@ description: Session audit (this thread) with mandatory report, then loop audit�
 
 **Authoritative contract:** `.cursor/skills/audit/SKILL.md` and `.cursor/rules/audit.mdc`. This command **authorizes the fix phase** — equivalent to "audit your work and fix any issues."
 
-**Pipeline:** orchestrator **Freshness pass** (when applicable) → dual `session-auditor` (`TRACK=session`, bug_hunt + claim_bust) → confirm-only `audit-verifier` (`TRACK=session`) → mandatory §4 report to Matt → fix `audit-verifier` when not green. Orchestrator remains hub; does not solo-audit instead of dual critics.
+**Pipeline:** orchestrator **Freshness pass** (when applicable) + **prepr prepare oracle** (code sessions) → dual `session-auditor` (`TRACK=session`, bug_hunt + claim_bust) → confirm-only `audit-verifier` (`TRACK=session`) → mandatory §4 report to Matt → fix `audit-verifier` when not green. Orchestrator remains hub; does not solo-audit instead of dual critics. Prepr prepare bundle is oracle evidence for critics/verifier — never a model-oracle Green substitute. The script does not dispatch adversarial review in myaudit; `ROLE=bug_hunt` owns the adversarial prepr lens from the bundle.
 
 ## Scope
 
@@ -32,13 +32,24 @@ Every dispatch for a round must include:
 - Load-bearing chat claims list (verbatim or quoted)
 - Plan/todo ids in thread (or "none")
 - Prior round finding deltas (rounds 2–4)
-- When `DELTA_CHECK=true`: paths touched by last Phase 2 fix, prior confirmed findings + clearance claims, fix-round oracle tails (critic reports optional — omit dual critics)
+- When `DELTA_CHECK=true`: paths touched by last Phase 2 fix, prior confirmed findings + clearance claims, fix-round oracle tails. **Code sessions:** one **`ROLE=bug_hunt`** critic report (after prepr prepare re-run; prepared bundle attached); **skip `ROLE=claim_bust`**. **Docs-only / no-code:** skip all critics.
 - Oracle log tails already collected this round (if any)
 - **Freshness oracle notes** (orchestrator-collected before critics when Freshness pass ran; use "none" otherwise)
-- For verifier step 1: **both critic reports** (bug_hunt + claim_bust) — **unless** `DELTA_CHECK=true`
+- **Prepr prepare bundle** — for **code** sessions: exit code, fingerprint, `scope_paths`, `files`, `audit_input`, and `prompt` from repo-local `prepr_audit.py --worktree --prepare --json --path …` (one `--path` per session code path). Docs-only sessions: `prepr: N/A`. Exit **2/3** or a missing run is a failed/unverified oracle (blocks Green:Y). Adversarial findings come from critics/verifier, not from the prepare script.
+- For verifier step 1: **both critic reports** (bug_hunt + claim_bust) on **full** rounds — on **`DELTA_CHECK=true` code rounds**, the **delta `bug_hunt` report** + prepr prepare bundle (no claim_bust); on **docs-only delta**, critic reports omitted
 - For verifier step 2 only: the confirmed finding list from step 1 (no re-litigating dropped items without new evidence)
 
-**Pin Task `model` on every audit dispatch:** critics → `model: "composer-2.5-fast"` + `readonly: true` (omit denied). Adjudicator (confirm + fix) → **only** **omit** `model` or `cursor-grok-4.5-high`. Never k3 as an adjudicator pin. Never Composer. **Default: omit** (frontmatter Grok-high backs omit under Auto). Optional pin high ONLY when a prior Task in **this conversation transcript** landed with explicit `model: cursor-grok-4.5-high` without product deny / "Couldn't start"; if unsure → omit; never-first-under-Auto. On pin deny: retry omit once; never k3; never Composer. If omit fails → STOP. Escape hatch if Task enum lacks subagent_type: `generalPurpose` / `explore` / missing-type + read `.cursor/agents/<name>.md` with the **same** rules. Never bare `grok-4.5-high` or Grok `*-fast`. Native types preferred.
+**Host dispatch (HARD):** resolve critic + adjudicator from **`.cursor/dispatch-settings.yaml`** for the active host (`cursor` | `grok` | `claude`). Procedure is host-invariant; models/types/tools are not.
+
+| Host | Dispatch | Critic model | Adjudicator model |
+|------|----------|--------------|-------------------|
+| **cursor** | `Task` | pin `composer-2.5-fast` + `readonly: true` (native `session-auditor`) | omit-first; optional `cursor-grok-4.5-high` only; never Composer/k3 adjudicator |
+| **grok** | `spawn_subagent` | **omit always** (harness default / parent) + `capability_mode: read-only`; type `general-purpose` + read `session-auditor.md` | **omit always**; confirm `read-only`, fix `all`; type `general-purpose` + read `audit-verifier.md` |
+| **claude** | `Agent` | **omit always** + agent md | **omit always** + agent md |
+
+- **Grok:** do **not** pin `composer-*`, `cursor-grok-*`, `grok-composer-*`, or bare `grok-4.5` — let the Grok harness run its default.
+- **Cursor escape hatch:** if Task enum lacks native type → `generalPurpose`/`explore` + read agent `.md` with the **same host profile** model rules. Native types preferred on Cursor.
+- Full field list and notes live in `dispatch-settings.yaml` only — do not re-hardcode Cursor pins into Grok sessions.
 
 ## Freshness pass (orchestrator — before dual critics when applicable)
 
@@ -54,18 +65,43 @@ Put results in artifact pack as **Freshness oracle notes**. Paid web budget does
 
 **Delta freshness reuse:** Freshness pass before dual critics when running **full** re-audit; `DELTA_CHECK=true` rounds may reuse last freshness notes unless session paths/claims changed.
 
+## Prepr prepare oracle (orchestrator — code sessions)
+
+**Owner:** orchestrator. Not a substitute for dual critics/verifier. The script collects and fingerprints session diff input only — it does **not** dispatch Cursor/Fleet or stamp markers in myaudit.
+
+- **When:** session file set includes code (extensions audited by `prepr_audit.py`). Docs-only / no-code → mark **prepr: N/A**; do not run.
+- **Command:** pass **every code path from the session file set** as a separate `--path`. Use the **repo-local** script (synced to every fleet repo):
+
+```bash
+python3 .cursor/scripts/prepr_audit.py --worktree --prepare --json \
+  --path <session/code/path1> --path <session/code/path2>
+```
+
+  Any cwd inside the repo works — the script resolves the root itself. `--prepare` requires `--worktree` and **rejects** `--post`, `--pr`, and `--waive` (exit 2).
+- **When to run:** (1) before round-1 critics; (2) after every Phase 2, before the mandatory full/delta confirm. Attach the full JSON bundle to critics (full rounds: both; **delta code rounds:** `bug_hunt` only).
+- **Critic roles (full rounds):**
+  - `ROLE=bug_hunt` — adversarial prepr lens: review `audit_input` / `prompt` from the bundle for logic bugs, edge cases, security, broken error handling.
+  - `ROLE=claim_bust` — validate bundle freshness/scope/fingerprint (matches current session file set; re-run after fixes).
+  - Verifier adjudicates findings from both critics.
+- **Delta code rounds (`DELTA_CHECK=true`):** after prepr prepare re-run, dispatch **exactly one** read-only `session-auditor` with **`ROLE=bug_hunt`**, **`TRACK=session`**, and the prepared bundle. **Skip `claim_bust`**. Verifier receives delta `bug_hunt` report + bundle + prior findings/clearance/oracles.
+- **Interpretation:**
+  - **exit 0** — prepare succeeded (including no-code). Attach bundle to artifact pack.
+  - **exit 2 / exit 3 / no run** — failed or unverified oracle. Blocks **Green: Y** for code sessions until a completed prepare exists.
+- **Green gate:** code sessions require a **completed** latest prepare run for the **current fingerprint** (re-run after fixes change the input) **plus** zero confirmed open HIGH/MEDIUM from critics/verifier. Docs-only: prepr N/A does not block green.
+
 ## Phase 1 — Audit (read-only)
 
 Do **not** edit files during this phase.
 
 1. State scope block: target, in scope, out of scope, depth.
 2. Run **Freshness pass** when applicable; attach **Freshness oracle notes** to artifact pack.
-3. **Dual critics (parallel):** dispatch two `session-auditor` Tasks in one turn with **`TRACK=session`**, **`model: "composer-2.5-fast"`**, `readonly: true`:
-   - `ROLE=bug_hunt` — correctness, regressions, edge cases, silent failures
-   - `ROLE=claim_bust` — chat claims vs evidence, false done, process gaps, **shared freshness items** (stale/false paths, outdated API/version claims, chat "verified" without evidence, scope creep vs thread intent, freshness failures)
-4. **Confirm-only verifier:** dispatch `Task(subagent_type: "audit-verifier", readonly: true)` with `fix_authorized=false`, **`TRACK=session`**, both critic reports — **unless** `DELTA_CHECK=true` — and Freshness oracle notes in the artifact pack. Adjudicator model: omit-first (omit default; optional `cursor-grok-4.5-high` only if this transcript already saw Task accept that pin; on deny retry omit once; never k3 as an adjudicator pin; never Composer). Dual-mode agent cannot use frontmatter `readonly`; dispatch-level `readonly: true` is the mechanical backstop for confirm-only. Verifier confirms/rejects/dedupes and returns §4-ready payload.
-5. **Optional bugbot:** only when Matt opted in — fold into Findings; does not replace §4.1–§4.3.
-6. Orchestrator surfaces **mandatory report** to Matt in order (from verifier payload + synthesis):
+3. Run **prepr prepare oracle** when this is a **code** session; attach **Prepr prepare bundle** (or `prepr: N/A` for docs-only).
+4. **Dual critics (parallel):** dispatch two critics in one turn with **`TRACK=session`**, roles `bug_hunt` + `claim_bust`, using the **active host profile** from `dispatch-settings.yaml` (type, model policy, readonly/capability_mode, prompt_from):
+   - `ROLE=bug_hunt` — correctness, regressions, edge cases, silent failures; **adversarial prepr lens** from prepare bundle (`audit_input` / `prompt`)
+   - `ROLE=claim_bust` — chat claims vs evidence, false done, process gaps, **shared freshness items** (stale/false paths, outdated API/version claims, chat "verified" without evidence, scope creep vs thread intent, freshness failures), and **prepr bundle freshness** (fingerprint, scope_paths, session file set alignment)
+5. **Confirm-only verifier:** dispatch adjudicator with `fix_authorized=false`, **`TRACK=session`**, critic report(s) per mode — **full:** both bug_hunt + claim_bust; **`DELTA_CHECK` code:** delta bug_hunt + prepr prepare bundle; **`DELTA_CHECK` docs-only:** no critic reports — plus Freshness oracle notes. Use host profile for type/model/readonly (Cursor: Task `audit-verifier` + omit-first; Grok: `spawn_subagent` general-purpose + omit + read-only). Verifier confirms/rejects/dedupes and returns §4-ready payload.
+6. **Optional bugbot:** only when Matt opted in — fold into Findings; does not replace §4.1–§4.3.
+7. Orchestrator surfaces **mandatory report** to Matt in order (from verifier payload + synthesis):
    - **Action summary** (verdict, do now, blocked on Matt, plan status)
    - **Verification ledger** (every row: verified / unverified / inferred)
    - **Plan completion** (row per plan/todo item, or N/A)
@@ -77,7 +113,7 @@ Do **not** edit files during this phase.
 
 ## Phase 2 — Fix (authorized by this command)
 
-1. Dispatch `audit-verifier` with `fix_authorized=true`, **`TRACK=session`**, adjudicator model omit-first (omit default; optional `cursor-grok-4.5-high` only if this transcript already saw Task accept that pin; on deny retry omit once; never k3 as an adjudicator pin; never Composer), and the **confirmed finding list** from Phase 1 step 1 — fix **only** those findings; no scope creep.
+1. Dispatch adjudicator with `fix_authorized=true`, **`TRACK=session`**, host-profile fix settings (Cursor: Task `audit-verifier` omit-first; Grok: `spawn_subagent` general-purpose, **model omit**, `capability_mode: all`), and the **confirmed finding list** from Phase 1 step 1 — fix **only** those findings; no scope creep.
 2. Orchestrator reviews diff + runs oracle gate. No LOC force-dispatch.
 3. Re-verify each fix via oracle/ledger updates only — **this is not a re-audit**. Fix-agent self-report (`NEW_HIGH_FROM_FIX`, clearance notes) is **input to post-fix mode selection only**; it does **not** authorize **Green: Y**, “zero HIGH/MEDIUM,” or ending the loop.
 
@@ -89,9 +125,10 @@ Run **sequentially** — do not start the next round until the current round's P
 - Findings: **zero** HIGH and **zero** MEDIUM rows — as of the **latest confirm** (full confirm or `DELTA_CHECK` confirm), **not** as of the fix verifier's self-report
 - Plan completion: no **partial** or **not started** rows for in-scope items
 - Every load-bearing claim in Verification ledger is **verified** or explicitly **blocked on Matt** (not silently **unverified**) — **freshness-verified ledger gate**
+- **Code sessions:** a **completed** latest prepr prepare run exists for the **current fingerprint**. Exit 2/3, a missing run, or a stale fingerprint → not green. Docs-only: prepr N/A
 - Action summary **Do now** is "Nothing blocking — ship" (or equivalent)
 
-**Not green** (keep looping) when any **fixable-in-session** HIGH/MEDIUM finding remains, any in-scope plan item is partial/not started, load-bearing freshness claims lack verification or explicit Matt blocker, or fixes introduced new regressions surfaced in re-audit.
+**Not green** (keep looping) when any **fixable-in-session** HIGH/MEDIUM finding remains, any in-scope plan item is partial/not started, load-bearing freshness claims lack verification or explicit Matt blocker, code-session prepr prepare is missing / exit 2–3 / stale fingerprint, or fixes introduced new regressions surfaced in re-audit.
 
 **Stop early — Blocked on Matt (HARD):** after confirm (any round), if every remaining HIGH/MEDIUM finding is explicitly **Blocked on Matt** / requires Matt authorization (credentials, commit/push, taste, irreversible outward action, or a decision only Matt can make) **and** there are **zero** fixable-in-session HIGH/MEDIUM findings — **exit the loop immediately**. Do **not** start Phase 2 or further re-audit rounds. Surface the §4 report (or Re-audit block), list blockers under **Blocked on you**, and end with **Loop summary** `**Green:** N` (not Y — Matt action still required). Wasted rounds that cannot clear without Matt are forbidden.
 
@@ -103,20 +140,20 @@ Run **sequentially** — do not start the next round until the current round's P
 1. **Full re-audit** when **any** of:
    - the **prior confirm** (full or delta) had **any HIGH** finding — including HIGH the fix claims to have cleared (clearing prior HIGH requires dual critics, not delta); **or**
    - the fix introduced **any new HIGH** (including a previously-cleared HIGH reopened as HIGH), or the fix verifier / oracle gate reports a HIGH regression  
-   → Freshness pass (when applicable) + dual `session-auditor` + confirm-only verifier.
+   → Freshness pass (when applicable) + **prepr prepare re-run** (code sessions) + dual critics + confirm-only verifier (host profile).
 2. **Confirm-only delta check** only when **both**:
    - the **prior confirm** had **zero HIGH**, **and**
    - the fix introduced **no new HIGH** (`NEW_HIGH_FROM_FIX=false`)  
-   → **skip dual critics**. Dispatch one confirm-only `audit-verifier` (`fix_authorized=false`, adjudicator model omit-first (omit default; optional `cursor-grok-4.5-high` only if this transcript already saw Task accept that pin; on deny retry omit once; never k3 as an adjudicator pin; never Composer; still `readonly: true`)) with **`DELTA_CHECK=true`**, fix-touched paths, prior confirmed findings + clearance claims, and fix-round oracle tails. New MEDIUM-only issues do **not** force full re-audit. Delta confirm is still a **real second pass** — clearances are not green until this Task returns zero HIGH/MEDIUM (or stop-early).
+   → Re-run **prepr prepare** (code sessions) before the delta confirm. **Code sessions:** dispatch **one** read-only `session-auditor` with **`ROLE=bug_hunt`**, **`TRACK=session`**, and the prepared bundle (**skip `claim_bust`**). **Docs-only / no-code:** skip all critics. Then dispatch one confirm-only adjudicator (`fix_authorized=false`, host-profile confirm settings + **`DELTA_CHECK=true`**), fix-touched paths, prior confirmed findings + clearance claims, fix-round oracle tails, prepr prepare bundle (code), and delta **`bug_hunt` report** when present. New MEDIUM-only issues do **not** force full re-audit. Delta confirm is still a **real second pass** — clearances are not green until this confirm returns zero HIGH/MEDIUM (or stop-early) **and** (code) a completed prepr prepare exists for the **current fingerprint**.
 3. If a confirm-only delta check **surfaces a new HIGH**, do **not** Phase 2 yet — **escalate in the same round** to full re-audit (dual critics + confirm) before further fixes. Still counts as one round toward the cap.
 
 **Per round:**
 1. **Round 1:** full mandatory report (§4.1–§4.4) before any edits (always dual critics + confirm). Apply stop-early if only Matt blockers remain.
-2. **After Phase 2:** always open rounds 2–4 via post-fix re-audit mode (never end on fix alone). Emit **Re-audit (round N/4)** or **Re-audit (round N/4) — delta**. Findings / ledger / Plan completion **deltas only**; skip unchanged rows. Apply stop-early after confirm (or after escalate-confirm).
+2. **After Phase 2:** always open rounds 2–4 via post-fix re-audit mode (never end on fix alone). Emit **Re-audit (round N/4)** or **Re-audit (round N/4) — delta**. **Delta code:** one `bug_hunt` critic + confirm; **delta docs-only:** confirm only. Findings / ledger / Plan completion **deltas only**; skip unchanged rows. Apply stop-early after confirm (or after escalate-confirm).
 3. If not green, not stop-early, and round `< 4`: Phase 2 (fix verifier) on confirmed findings only, then **mandatory** next re-audit round.
 4. If green or stop-early **after a confirm/delta confirm**, or round `= 4`: exit loop.
 
-**End state:** short **Loop summary** that includes a string matching `.cursor/hooks/audit_marker.py` `GREEN_RE` when green so the push-audit stamp can fire — prefer `**Green:** Y` or `Green: Y` (also accepted: `rounds used … Green: Y` / `Loop summary … Green: Y`). When not green, use `**Green:** N` or `Green: N`. **Push OK also requires dual-critic→confirm Task dispatch evidence in the transcript** (`tool_use` Task blocks, not assistant prose alone) when `/myauditandfix` was invoked (see `audit_marker.py` pipeline gate; kill switch `/tmp/.cursor_audit_pipeline_gate_disable`). Also include: rounds used (e.g. 2/4), re-audit mode used each round (full vs delta), what changed across rounds, what was re-verified vs still unverified, any findings left after cap. **Green: Y requires at least one post-fix confirm or delta-confirm Task in the transcript when Phase 2 ran** (fix self-report alone is insufficient).
+**End state:** short **Loop summary** that includes a string matching `.cursor/hooks/audit_marker.py` `GREEN_RE` when green so the push-audit stamp can fire — prefer `**Green:** Y` or `Green: Y` (also accepted: `rounds used … Green: Y` / `Loop summary … Green: Y`). When not green, use `**Green:** N` or `Green: N`. **Push OK also requires critic→confirm Task dispatch evidence in the transcript** (`tool_use` Task blocks, not assistant prose alone) when `/myauditandfix` was invoked (see `audit_marker.py` pipeline gate; kill switch `/tmp/.cursor_audit_pipeline_gate_disable`): **round 1** = dual critics → confirm; **delta code rounds** = one `bug_hunt` critic → confirm; **delta docs-only** = confirm-only. Also include: rounds used (e.g. 2/4), re-audit mode used each round (full vs delta), what changed across rounds, what was re-verified vs still unverified, any findings left after cap. **Green: Y requires at least one post-fix confirm or delta-confirm Task in the transcript when Phase 2 ran** (fix self-report alone is insufficient).
 
 **After Green: Y — stamp_ok (cloud / stop-miss):** when this conversation may lack a local agent transcript (Cloud Agent `bc-*` ids, or stop hook did not stamp), run before any `/commitprmerge` push. With a real `conversation_id`, `stamp_ok` requires a prior PENDING marker (`/myauditandfix` or `/verify-plan` already invoked); without PENDING it no-ops. Workspace-only stamp (no `conversation_id`) can still mint WS_OK without PENDING by design.
 
@@ -144,3 +181,10 @@ This is the authorized recovery path — not inventing bypass files. Local chats
 - Treating `NEW_HIGH_FROM_FIX: false` as green or as a substitute for re-audit
 - Using confirm-only delta when the prior confirm had any HIGH (must full re-audit until a confirm returns zero HIGH)
 - Using confirm-only delta when the fix introduced a new HIGH / HIGH regression (must full re-audit)
+- Declaring **Green: Y** on a code session without a completed latest `prepr_audit.py --worktree --prepare` run for the current fingerprint, or treating prepr alone as a substitute for dual critics/verifier
+- Dropping the prepr prepare bundle from the artifact pack
+- Running prepr inside `/commitprmerge` instead of `/myauditandfix`
+- Running `--worktree` without `--path` for the session file set (audits pre-session WIP)
+- Running prepr without `--prepare` in myaudit (`--worktree` without `--prepare` is legacy worktree dispatch/stamp; branch mode is no `--worktree`, may use `--post` — neither used in myaudit)
+- Skipping delta **`bug_hunt`** critic on code-session `DELTA_CHECK` rounds (docs-only delta may skip all critics)
+- Using confirm-only delta on code sessions without re-running prepr prepare and attaching the current bundle

@@ -67,9 +67,9 @@ Export `LANG=en_US.UTF-8` before fastlane. Full table: `/Volumes/Cloud Storage/M
 
 Load `ios-ship-runbook.md` before any TestFlight or archive work. Per-app detail in `mrs-lollipop-*`, `ft-terminal-ios.md`, `ft-command-testflight-ship.md`, `scriptorium-build.md`.
 
-## Pre-PR audit
+## Prepr audit (via `/myauditandfix`)
 
-`.cursor/scripts/prepr_audit.py` — run before `gh pr create` when code changed. `--post` after push if PR open.
+`.cursor/scripts/prepr_audit.py --worktree --prepare --json --path <session code path> …` — run as a `/myauditandfix` oracle when the session changed code (not during `/commitprmerge` / `gh pr create`). Docs-only sessions: N/A. Green for code sessions requires a completed latest prepare bundle for the current fingerprint; `/commitprmerge` reuses that transcript evidence.
 
 ## SwiftUI design + visual verify
 
