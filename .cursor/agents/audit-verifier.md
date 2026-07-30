@@ -62,6 +62,8 @@ Used after Phase 2 when the **prior confirm** had **zero HIGH** and the fix intr
 
 ### Full confirm (default)
 
+**Adjudicate on supplied evidence.** Run additional read oracles only to resolve contested or HIGH findings (hard cap 3) — do not re-investigate the whole surface. When both critic reports show **zero findings**, return a verdict-only payload (ledger from supplied evidence, empty findings tables) without oracle re-runs. Large evidence may arrive by reference (e.g. `/tmp/prepr_bundle_<fingerprint>.json`) — read the file; a referenced path is not a missing bundle.
+
 1. Cross-check both critic findings against the file set for TRACK, claims, Freshness oracle notes, and oracle tails.
 2. **Drop** false positives — cite evidence for each rejection.
 3. **Dedupe** overlapping findings from bug_hunt and claim_bust.

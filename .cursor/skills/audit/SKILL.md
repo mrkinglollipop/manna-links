@@ -64,7 +64,7 @@ Professional practice: independent parallel critics with different lenses, then 
 - When `DELTA_CHECK=true`: paths touched by last Phase 2 fix, prior confirmed findings + clearance claims. **Code sessions:** one **`ROLE=bug_hunt`** critic report (after prepr prepare re-run; prepared bundle attached); **skip `claim_bust`**. **Docs-only / no-code:** skip all critics.
 - Oracle log tails already collected this round (if any)
 - **Freshness oracle notes** (orchestrator-collected when Freshness pass ran; use "none" otherwise)
-- **Prepr prepare bundle** — code sessions: exit code, fingerprint, `scope_paths`, `files`, `audit_input`, `prompt` from repo-local `prepr_audit.py --worktree --prepare --json --path …`; docs-only: `prepr: N/A`. Exit 2/3 or a missing run = failed/unverified (blocks Green:Y). Never a Green substitute; adversarial review is owned by critics.
+- **Prepr prepare bundle** — code sessions: exit code, fingerprint, `scope_paths`, `files`, `audit_input`, `prompt` (inline when ≤~200 lines; otherwise metadata + `/tmp/prepr_bundle_<fingerprint>.json` path per Pack-once rule) from repo-local `prepr_audit.py --worktree --prepare --json --path …`; docs-only: `prepr: N/A`. Exit 2/3 or a missing run = failed/unverified (blocks Green:Y). Never a Green substitute; adversarial review is owned by critics.
 - Verifier step 1: **both critic reports** on **full** rounds — on **`DELTA_CHECK=true` code rounds**, the **delta `bug_hunt` report** + prepr prepare bundle (no claim_bust); on **docs-only delta**, critic reports omitted
 - Verifier step 2 only: confirmed finding list from step 1
 
@@ -76,6 +76,13 @@ Professional practice: independent parallel critics with different lenses, then 
 **Prepr prepare oracle (orchestrator — `/myauditandfix` code sessions):** run repo-local `prepr_audit.py --worktree --prepare --json --path <each session code path>` before round-1 critics and again after each Phase 2 before full/delta confirm. `--prepare` requires `--worktree` and ≥1 `--path` (session scope only, no pre-session WIP); rejects `--post` / `--pr` / `--waive`. Full rounds: attach bundle to both critics (`bug_hunt` adversarial lens; `claim_bust` bundle freshness). **Delta code rounds:** after prepare re-run, one read-only `bug_hunt` critic with the bundle; skip `claim_bust`. Docs-only → N/A. Prepr does not replace critics/verifier; exit 2/3 or a missing run blocks Green:Y. Green needs a completed prepare for the **current fingerprint** plus zero confirmed open HIGH/MEDIUM from critics/verifier.
 
 Paid web budget is separate from each critic's 3 oracle-run cap.
+
+**Pack once, reference big blobs (speed):** compose the artifact pack **once per round**; paste the identical block into every dispatch that round. Cap inline oracle log tails at ~40 lines; do not inline file contents critics can read from the file set. Prepr bundles with `audit_input`/`prompt` over ~200 lines → write full JSON to `/tmp/prepr_bundle_<fingerprint>.json`, attach metadata (exit code, fingerprint, `scope_paths`, `files`) + that path inline.
+
+**Fast paths (speed — quality-preserving):**
+- **No auditable surface (`/myauditandfix`):** empty session file set + no load-bearing claims → skip critics/verifier; minimal §4 report; Loop summary `Green: N/A — no auditable surface` (never `Green: Y` — pipeline gate requires critic→confirm evidence).
+- **Zero-findings slim confirm:** both critics return zero findings → confirm verifier still mandatory, but slim pack + verdict-only adjudication (oracle re-runs only for contested or HIGH items).
+- **`quick` depth (Matt-invoked only):** trailing `quick` or Matt quick-intent phrasing per §0 ("sanity check" / "spot check") → critics report HIGH/MEDIUM only; Freshness free oracles only; round cap 2 (overrides the default 4). Green criteria unchanged. The agent never self-selects `quick` absent Matt's words.
 
 **Per round (read-only phase):**
 1. Orchestrator states scope block; runs Freshness pass when applicable; attaches Freshness oracle notes. Runs prepr prepare on code sessions (or marks N/A). (On `DELTA_CHECK=true` rounds: may reuse last freshness notes unless session paths/claims changed; **re-run prepr prepare** after Phase 2 for code sessions.)

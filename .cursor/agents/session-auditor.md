@@ -44,6 +44,10 @@ Critics do not self-select models — if the orchestrator violated host policy, 
 
 If the artifact pack is incomplete (missing Freshness oracle notes field, file set for TRACK, or scope block), return **BLOCKED**.
 
+**Large blobs by reference:** the prepr prepare bundle (or other big evidence) may arrive as inline metadata (exit code, fingerprint, `scope_paths`, `files`) plus a `/tmp/prepr_bundle_<fingerprint>.json` path — read that file for `audit_input`/`prompt`; a referenced path is not a missing bundle.
+
+**Depth `quick` (when the scope block says so):** report **HIGH/MEDIUM findings only** — skip LOW enumeration. Severity thresholds unchanged.
+
 ## ROLE lenses
 
 ### ROLE=bug_hunt

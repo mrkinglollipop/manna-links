@@ -21,7 +21,7 @@ State in one short block:
 - **Target** — plan artifact(s) in this thread (`.cursor/plans/*.md`, topic `*-plan.md`, todo list, approved-build scope block in chat)
 - **In scope** — plan claims, dependencies, acceptance criteria, verification rows, contradictions, stale paths, freshness of version/API claims
 - **Out of scope** — implementing plan items, app/harness source edits, repo-wide git diff, pre-thread WIP
-- **Depth** — thorough (default for `/verify-plan`)
+- **Depth** — thorough (default for `/verify-plan`); trailing **`quick`** (Matt-invoked only) → critics report HIGH/MEDIUM only, Freshness free oracles only, round cap 2; green criteria unchanged
 - **Track** — **`TRACK=plan`** on every critic and verifier dispatch
 
 If no plan artifact exists: say so in Action summary; offer to draft one or narrow trailing text to a path. Do not invent a plan.
@@ -42,6 +42,8 @@ Every dispatch for a round must include:
 - **Freshness oracle notes** (orchestrator-collected before critics on **full** re-audit; delta rounds may reuse last notes unless plan paths/claims changed — use "none" only if Freshness never ran)
 - For verifier step 1: **both critic reports** (bug_hunt + claim_bust) — **unless** `DELTA_CHECK=true`
 - For verifier step 2 only: confirmed finding list from step 1
+
+**Pack once (speed):** compose the artifact pack **once per round**; paste the identical block into every dispatch that round. Cap inline oracle log tails at ~40 lines; do not inline plan file contents critics can read from the plan file set.
 
 **Host dispatch (HARD):** resolve from **`.cursor/dispatch-settings.yaml`**. Cursor critics pin `composer-2.5-fast`; adjudicator **omit-first** (optional `cursor-grok-4.5-high` only; **never Composer**/k3 as adjudicator). **Grok/Claude omit model always**. Escape hatch uses host profile + agent `.md`.
 
@@ -85,7 +87,7 @@ Critics run shell/read oracles within their 3-run cap. Paid web is orchestrator-
 
 ### Confirm-only verifier
 
-After critics return (or on `DELTA_CHECK=true` without critics), dispatch adjudicator with `fix_authorized=false`, host-profile confirm settings, **`TRACK=plan`**, Freshness oracle notes, and **both critic reports** — **unless** `DELTA_CHECK=true` (then fix-touched paths + prior findings + clearance claims). Verifier dedupes, builds ledger (including freshness rows), and returns §4-ready payload.
+After critics return (or on `DELTA_CHECK=true` without critics), dispatch adjudicator with `fix_authorized=false`, host-profile confirm settings, **`TRACK=plan`**, Freshness oracle notes, and **both critic reports** — **unless** `DELTA_CHECK=true` (then fix-touched paths + prior findings + clearance claims). Verifier dedupes, builds ledger (including freshness rows), and returns §4-ready payload. When both critics return **zero findings**, dispatch the confirm with a slim pack and verdict-only adjudication — oracle re-runs only for contested or HIGH items.
 
 ## 3. Report format
 
@@ -127,7 +129,7 @@ Run **sequentially** — do not start the next round until the current round's P
 
 **Stop early — Blocked on Matt (HARD):** after confirm (any round), if every remaining HIGH/MEDIUM finding is explicitly **Blocked on Matt** / requires Matt authorization **and** there are **zero** fixable-in-session HIGH/MEDIUM findings — **exit immediately**. Do not start Phase 2 or further rounds. Loop summary `**Green:** N` with blockers listed (not Y).
 
-**Round cap:** **4 rounds** total. After round 4, stop even if not green; report remaining findings and **Blocked on you** items. Stop-early may exit sooner.
+**Round cap:** **4 rounds** total (**2** when Matt invoked `quick`). After the cap, stop even if not green; report remaining findings and **Blocked on you** items. Stop-early may exit sooner.
 
 **Post-fix re-audit mandatory (HARD):** after **every** Phase 2 that ran, dispatch the next round's audit (full or delta) **before** green / “no more HIGH” / Loop summary — **in the same turn**; do **not** end the turn on fix alone or wait for Matt before re-audit. `NEW_HIGH_FROM_FIX` and whether the prior confirm had any HIGH choose shape only — never skip re-audit / never equals green.
 
@@ -145,10 +147,10 @@ Run **sequentially** — do not start the next round until the current round's P
 **Per round:**
 1. **Round 1:** Freshness pass → dual critics + confirm verifier → full mandatory report (§3) before any plan edits; apply stop-early
 2. **After Phase 2:** always open rounds 2–4 via post-fix re-audit mode (never end on fix alone). Emit **Re-audit (round N/4)** or **Re-audit (round N/4) — delta:** Findings / ledger / Plan completion deltas. Skip unchanged rows. Apply stop-early after confirm (or after escalate-confirm). Freshness pass required before **full** re-audit; delta rounds may reuse last notes unless plan paths/claims changed.
-3. If not green, not stop-early, and round `< 4`: Phase 2 (fix verifier, `TRACK=plan`) on plan documents only, then **mandatory** next re-audit
-4. If green or stop-early **after a confirm/delta confirm**, or round `= 4`: exit loop
+3. If not green, not stop-early, and round `< cap` (4; 2 under `quick`): Phase 2 (fix verifier, `TRACK=plan`) on plan documents only, then **mandatory** next re-audit
+4. If green or stop-early **after a confirm/delta confirm**, or round `= cap`: exit loop
 
-**End state:** **Loop summary** — rounds used (e.g. 3/4), green Y/N, full vs delta each round, stop-early if applicable, plan files changed, what was verified vs still blocked on Matt. No push-audit stamp. **Green: Y** requires a post-fix confirm/delta-confirm Task when Phase 2 ran.
+**End state:** **Loop summary** — rounds used (e.g. 3/4), full vs delta each round, stop-early if applicable, plan files changed, what was verified vs still blocked on Matt. Use the exact strings `**Green:** Y` / `**Green:** N` (or `Green: Y` / `Green: N`) — the stop hook's `GREEN_RE` matches only these; on green it stamps OK/WS_OK while leaving shared PENDING in place, and loose phrasing does not stamp. **Green: Y** requires a post-fix confirm/delta-confirm Task when Phase 2 ran.
 
 ## 6. After green
 

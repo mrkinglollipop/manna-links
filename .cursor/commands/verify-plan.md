@@ -13,19 +13,6 @@ Distinct from **`/myauditandfix`**: plan scope + plan-document fixes only (no se
 
 **Pipeline:** orchestrator **Freshness pass** → dual `session-auditor` (`TRACK=plan`, bug_hunt + claim_bust) → confirm-only `audit-verifier` (`TRACK=plan`) → mandatory §4 report to Matt → fix `audit-verifier` (`TRACK=plan`) when not green. Orchestrator remains hub; does not solo-audit instead of dual critics.
 
-## Where this command lives
-
-Cursor loads slash commands from:
-
-1. **`~/.cursor/commands/`** (global — any opened folder)
-2. **`<workspace-root>/.cursor/commands/`** (project root only)
-
-After harness updates:
-
-```bash
-bash "/Volumes/Cloud Storage/Claude/.cursor/scripts/sync-harness.sh"
-```
-
 ## Scope
 
 - **Default:** plan artifact(s) from **this thread** — `.cursor/plans/*.md`, topic `*-plan.md`, todo list, approved-build scope stated in chat.
@@ -34,6 +21,11 @@ bash "/Volumes/Cloud Storage/Claude/.cursor/scripts/sync-harness.sh"
 - **Trailing text:** path to plan file or subsystem keyword; `audit-only` → no plan edits (report + loop exit only).
 
 If no plan exists in thread, report that and stop — do not fabricate a plan.
+
+## Fast paths (speed — quality-preserving)
+
+- **Zero-findings slim confirm:** when both round-1 critics return zero findings, the confirm verifier is still mandatory — but dispatch it with the slim pack (scope block, plan claims list, critic verdict lines, Freshness notes) and instruct **verdict-only adjudication**: build the ledger from supplied evidence; re-run read oracles only for contested or HIGH items.
+- **`quick` depth (Matt-invoked only):** trailing `quick` → critics report **HIGH/MEDIUM only** (skip LOW enumeration), Freshness pass uses free oracles only (no paid web unless a load-bearing version/API claim exists), round cap **2**. Green criteria unchanged (zero HIGH/MEDIUM). Never self-select `quick` absent Matt's words (trailing `quick` or quick-intent phrasing like "sanity check").
 
 ## Artifact pack (orchestrator → critics + verifier)
 
@@ -49,6 +41,8 @@ Every dispatch for a round must include:
 - **Freshness oracle notes** (orchestrator-collected before critics on **full** re-audit; delta rounds may reuse last notes unless plan paths/claims changed)
 - For verifier step 1: **both critic reports** (bug_hunt + claim_bust) — **unless** `DELTA_CHECK=true`
 - For verifier step 2 only: confirmed finding list from step 1
+
+**Pack once (speed):** compose the artifact pack **once per round** and paste the identical block into every dispatch that round — do not re-derive it per dispatch. Cap inline oracle log tails at ~40 lines each; do not inline plan file contents critics can read themselves — the plan file set paths are the reference.
 
 **Host dispatch (HARD):** resolve critic + adjudicator from **`.cursor/dispatch-settings.yaml`** for the active host (`cursor` | `grok` | `claude`). Same table as `/myauditandfix`: Cursor critics pin `composer-2.5-fast`; adjudicator **omit-first** (optional `cursor-grok-4.5-high` only; never Composer/k3). **Grok/Claude omit model always** (harness default). Do not hardcode Cursor slugs into non-Cursor sessions.
 
@@ -94,7 +88,7 @@ Skip when green after Phase 1 or trailing `audit-only`.
 
 ## Phase 3 — Loop until green (mandatory)
 
-Run sequentially up to **4 rounds**. See SKILL §5 for green/not-green criteria (includes **stop early** when only Blocked-on-Matt HIGH/MEDIUM remain).
+Run sequentially up to **4 rounds** (**2** when Matt invoked `quick`). See SKILL §5 for green/not-green criteria (includes **stop early** when only Blocked-on-Matt HIGH/MEDIUM remain).
 
 **Post-fix re-audit mandatory (HARD):** after **every** Phase 2 that ran, you **must** start the next round's audit (full or delta) **before** any claim of green, “no more HIGH,” “cleared,” or Loop summary — **in the same turn**; do **not** end the turn on fix alone or wait for Matt before re-audit. `NEW_HIGH_FROM_FIX` and whether the prior confirm had any HIGH choose shape only — never skip re-audit / never equals green.
 
@@ -113,20 +107,16 @@ Run sequentially up to **4 rounds**. See SKILL §5 for green/not-green criteria 
 2. **After every Phase 2:** mandatory next round — **Re-audit (round N/4)** or **Re-audit (round N/4) — delta** (`NEW_HIGH_FROM_FIX` and prior-confirm HIGH status choose shape only). Never end on fix alone. Deltas only; skip unchanged rows; stop-early after confirm
 3. Freshness pass before dual critics when running **full** re-audit; delta rounds may reuse last freshness notes unless plan paths/claims changed
 4. Phase 2 between rounds when not green **and** not stop-early; then mandatory re-audit again
-5. End with **Loop summary** (rounds used e.g. 2/4, green Y/N, full vs delta each round, stop-early if applicable, plan files touched, blockers on Matt — no push-audit stamp). **Green: Y** only after a confirm/delta-confirm Task when Phase 2 ran.
+5. End with **Loop summary** — rounds used (e.g. 2/4), full vs delta each round, stop-early if applicable, plan files touched, blockers on Matt. Use the exact strings `**Green:** Y` / `**Green:** N` (or `Green: Y` / `Green: N`) — the stop hook's `GREEN_RE` matches only these; on green it stamps OK/WS_OK while leaving shared PENDING in place. Loose phrasing ("plan is green") does not stamp. **Green: Y** only after a confirm/delta-confirm Task when Phase 2 ran.
 
 ## Anti-patterns
 
-- Ending the turn after Phase 1 §4 report when fixable HIGH/MEDIUM remain (waiting for Matt to authorize Phase 2)
-- Treating “report before fix writes” as a pause-for-ack checkpoint
-- Patching plan before mandatory report sections exist
-- Solo-auditing in orchestrator thread instead of dual critics + verifier
+- Pausing for Matt between the §4 report and Phase 2, or patching the plan before the §4 report exists (Same-turn continue + two-step order above)
+- Solo-auditing in orchestrator thread instead of dual critics + verifier, or `Task(explore)` instead of dual critics
 - Fixing session deliverables or app code (use `/myauditandfix`)
 - Harness encode (use `/oracle-retro`)
-- Stopping after one pass when not green (max 4 rounds)
-- Declaring green / “no more HIGH” after Phase 2 without post-fix confirm or `DELTA_CHECK`
-- Treating `NEW_HIGH_FROM_FIX: false` as green or as a substitute for re-audit
-- Using confirm-only delta when the prior confirm had any HIGH (must full re-audit until a confirm returns zero HIGH)
-- Using confirm-only delta when the fix introduced a new HIGH / HIGH regression
+- Stopping before green without stop-early or the 4-round cap
+- Declaring green / "no more HIGH" after Phase 2 without post-fix confirm or `DELTA_CHECK` (`NEW_HIGH_FROM_FIX: false` is not green and not a re-audit substitute)
+- Confirm-only delta outside its two conditions — prior confirm had any HIGH, or the fix introduced a new HIGH / HIGH regression → full re-audit until a confirm returns zero HIGH
 - Implicit `approved — build`
-- Using `Task(explore)` instead of dual critics
+- Self-selecting `quick` depth absent Matt's words

@@ -19,9 +19,15 @@ description: Session audit (this thread) with mandatory report, then loop audit�
 - **Narrow:** trailing text after `/myauditandfix` narrows or adds a target (path, subsystem, constraint). Still run Phase 2 unless trailing text explicitly says audit-only / no fixes.
 - **Out of scope:** unrelated workspace areas, drive-by refactors, new features beyond fixing listed findings.
 
-**Depth:** thorough. **Track:** **`TRACK=session`** on every critic and verifier dispatch (§0 session audit in SKILL). Skip graph orient (§1) when target is only this thread's local files.
+**Depth:** thorough (default); trailing **`quick`** per Fast paths below. **Track:** **`TRACK=session`** on every critic and verifier dispatch (§0 session audit in SKILL). Skip graph orient (§1) when target is only this thread's local files.
 
 **Bugbot:** default **off** for session track. Opt in **only** when Matt's prompt or trailing text explicitly asks for BugBot / `/review-bugbot`. No implicit carve-outs (including security-sensitive sessions).
+
+## Fast paths (speed — quality-preserving)
+
+- **No auditable surface:** session file set is empty (no `Write`/`StrReplace`/`Delete`, no shell side effects) **and** the thread has no load-bearing claims → skip critics and verifier entirely. Emit a minimal §4 report (Action summary + one-line ledger and Plan rows stating the empty surface) and end with **Loop summary** `Green: N/A — no auditable surface`. Never emit `Green: Y` on this path — the push gate requires critic→confirm Task evidence; if this session needs Push OK, run the full pipeline instead.
+- **Zero-findings slim confirm:** when both round-1 critics return zero findings, the confirm verifier is still mandatory (pipeline evidence) — but dispatch it with the slim pack (scope block, claims list, critic verdict lines, Freshness notes, prepr metadata) and instruct **verdict-only adjudication**: build the ledger from supplied evidence; re-run oracles only for contested or HIGH items.
+- **`quick` depth (Matt-invoked only):** trailing `quick` → critics report **HIGH/MEDIUM only** (skip LOW enumeration), Freshness pass uses free oracles only (no paid web unless a load-bearing external claim exists), round cap **2**. Green criteria unchanged (zero HIGH/MEDIUM). Never self-select `quick` absent Matt's words (trailing `quick` or quick-intent phrasing like "sanity check").
 
 ## Artifact pack (orchestrator → critics + verifier)
 
@@ -35,21 +41,15 @@ Every dispatch for a round must include:
 - When `DELTA_CHECK=true`: paths touched by last Phase 2 fix, prior confirmed findings + clearance claims, fix-round oracle tails. **Code sessions:** one **`ROLE=bug_hunt`** critic report (after prepr prepare re-run; prepared bundle attached); **skip `ROLE=claim_bust`**. **Docs-only / no-code:** skip all critics.
 - Oracle log tails already collected this round (if any)
 - **Freshness oracle notes** (orchestrator-collected before critics when Freshness pass ran; use "none" otherwise)
-- **Prepr prepare bundle** — for **code** sessions: exit code, fingerprint, `scope_paths`, `files`, `audit_input`, and `prompt` from repo-local `prepr_audit.py --worktree --prepare --json --path …` (one `--path` per session code path). Docs-only sessions: `prepr: N/A`. Exit **2/3** or a missing run is a failed/unverified oracle (blocks Green:Y). Adversarial findings come from critics/verifier, not from the prepare script.
+- **Prepr prepare bundle** — for **code** sessions: exit code, fingerprint, `scope_paths`, `files`, `audit_input`, and `prompt` (inline when ≤~200 lines; otherwise metadata + `/tmp/prepr_bundle_<fingerprint>.json` path per Pack-once rule below) from repo-local `prepr_audit.py --worktree --prepare --json --path …` (one `--path` per session code path). Docs-only sessions: `prepr: N/A`. Exit **2/3** or a missing run is a failed/unverified oracle (blocks Green:Y). Adversarial findings come from critics/verifier, not from the prepare script.
 - For verifier step 1: **both critic reports** (bug_hunt + claim_bust) on **full** rounds — on **`DELTA_CHECK=true` code rounds**, the **delta `bug_hunt` report** + prepr prepare bundle (no claim_bust); on **docs-only delta**, critic reports omitted
 - For verifier step 2 only: the confirmed finding list from step 1 (no re-litigating dropped items without new evidence)
 
-**Host dispatch (HARD):** resolve critic + adjudicator from **`.cursor/dispatch-settings.yaml`** for the active host (`cursor` | `grok` | `claude`). Procedure is host-invariant; models/types/tools are not.
+**Pack once, reference big blobs (speed):** compose the artifact pack **once per round** and paste the identical block into every dispatch that round — do not re-derive it per dispatch. Cap inline oracle log tails at ~40 lines each. Do not inline file contents critics can read themselves — the file set paths are the reference. When the prepr bundle's `audit_input`/`prompt` exceeds ~200 lines, write the full JSON to `/tmp/prepr_bundle_<fingerprint>.json` and attach inline only exit code, fingerprint, `scope_paths`, `files`, and that path — critics/verifier read the file.
 
-| Host | Dispatch | Critic model | Adjudicator model |
-|------|----------|--------------|-------------------|
-| **cursor** | `Task` | pin `composer-2.5-fast` + `readonly: true` (native `session-auditor`) | omit-first; optional `cursor-grok-4.5-high` only; never Composer/k3 adjudicator |
-| **grok** | `spawn_subagent` | **omit always** (harness default / parent) + `capability_mode: read-only`; type `general-purpose` + read `session-auditor.md` | **omit always**; confirm `read-only`, fix `all`; type `general-purpose` + read `audit-verifier.md` |
-| **claude** | `Agent` | **omit always** + agent md | **omit always** + agent md |
-
-- **Grok:** do **not** pin `composer-*`, `cursor-grok-*`, `grok-composer-*`, or bare `grok-4.5` — let the Grok harness run its default.
-- **Cursor escape hatch:** if Task enum lacks native type → `generalPurpose`/`explore` + read agent `.md` with the **same host profile** model rules. Native types preferred on Cursor.
-- Full field list and notes live in `dispatch-settings.yaml` only — do not re-hardcode Cursor pins into Grok sessions.
+**Host dispatch (HARD):** resolve critic + adjudicator from **`.cursor/dispatch-settings.yaml`** for the active host (`cursor` | `grok` | `claude`) — that file is the SSOT for dispatch tool, types, models, and readonly/capability modes. Procedure is host-invariant; models/types/tools are not.
+- **cursor:** `Task`; critics pin `composer-2.5-fast` + `readonly: true` (native `session-auditor`); adjudicator omit-first (optional `cursor-grok-4.5-high` only; never Composer/k3). Escape hatch when Task enum lacks the native type: `generalPurpose`/`explore` + read agent `.md`, same model rules.
+- **grok / claude:** **model omit always** (harness default) — do not pin `composer-*`, `cursor-grok-*`, `grok-composer-*`, or bare `grok-4.5`. Grok: `spawn_subagent` type `general-purpose` + agent `.md`; critic/confirm `capability_mode: read-only`, fix `all`. Claude: `Agent` + agent `.md`.
 
 ## Freshness pass (orchestrator — before dual critics when applicable)
 
@@ -132,7 +132,7 @@ Run **sequentially** — do not start the next round until the current round's P
 
 **Stop early — Blocked on Matt (HARD):** after confirm (any round), if every remaining HIGH/MEDIUM finding is explicitly **Blocked on Matt** / requires Matt authorization (credentials, commit/push, taste, irreversible outward action, or a decision only Matt can make) **and** there are **zero** fixable-in-session HIGH/MEDIUM findings — **exit the loop immediately**. Do **not** start Phase 2 or further re-audit rounds. Surface the §4 report (or Re-audit block), list blockers under **Blocked on you**, and end with **Loop summary** `**Green:** N` (not Y — Matt action still required). Wasted rounds that cannot clear without Matt are forbidden.
 
-**Round cap:** **4 rounds** total (round 1 = first Phase 1 + optional Phase 2; rounds 2–4 = re-audit/delta + fix). After round 4, stop even if not green; report remaining findings and **Blocked on you** items. Stop-early (above) may exit sooner.
+**Round cap:** **4 rounds** total (**2** when Matt invoked `quick`) (round 1 = first Phase 1 + optional Phase 2; rounds 2–4 = re-audit/delta + fix). After round 4, stop even if not green; report remaining findings and **Blocked on you** items. Stop-early (above) may exit sooner.
 
 **Post-fix re-audit mandatory (HARD):** after **every** Phase 2 that ran, you **must** start the next round's audit (full or delta) **before** any claim of green, “no more HIGH,” “cleared,” or Loop summary — **in the same turn**; do **not** end the turn on fix alone or wait for Matt before re-audit. `NEW_HIGH_FROM_FIX` and whether the prior confirm had any HIGH choose shape only — never skip re-audit / never equals green.
 
@@ -150,8 +150,8 @@ Run **sequentially** — do not start the next round until the current round's P
 **Per round:**
 1. **Round 1:** full mandatory report (§4.1–§4.4) before any edits (always dual critics + confirm). Apply stop-early if only Matt blockers remain.
 2. **After Phase 2:** always open rounds 2–4 via post-fix re-audit mode (never end on fix alone). Emit **Re-audit (round N/4)** or **Re-audit (round N/4) — delta**. **Delta code:** one `bug_hunt` critic + confirm; **delta docs-only:** confirm only. Findings / ledger / Plan completion **deltas only**; skip unchanged rows. Apply stop-early after confirm (or after escalate-confirm).
-3. If not green, not stop-early, and round `< 4`: Phase 2 (fix verifier) on confirmed findings only, then **mandatory** next re-audit round.
-4. If green or stop-early **after a confirm/delta confirm**, or round `= 4`: exit loop.
+3. If not green, not stop-early, and round `< cap` (4; 2 under `quick`): Phase 2 (fix verifier) on confirmed findings only, then **mandatory** next re-audit round.
+4. If green or stop-early **after a confirm/delta confirm**, or round `= cap`: exit loop.
 
 **End state:** short **Loop summary** that includes a string matching `.cursor/hooks/audit_marker.py` `GREEN_RE` when green so the push-audit stamp can fire — prefer `**Green:** Y` or `Green: Y` (also accepted: `rounds used … Green: Y` / `Loop summary … Green: Y`). When not green, use `**Green:** N` or `Green: N`. **Push OK also requires critic→confirm Task dispatch evidence in the transcript** (`tool_use` Task blocks, not assistant prose alone) when `/myauditandfix` was invoked (see `audit_marker.py` pipeline gate; kill switch `/tmp/.cursor_audit_pipeline_gate_disable`): **round 1** = dual critics → confirm; **delta code rounds** = one `bug_hunt` critic → confirm; **delta docs-only** = confirm-only. Also include: rounds used (e.g. 2/4), re-audit mode used each round (full vs delta), what changed across rounds, what was re-verified vs still unverified, any findings left after cap. **Green: Y requires at least one post-fix confirm or delta-confirm Task in the transcript when Phase 2 ran** (fix self-report alone is insufficient).
 
@@ -167,24 +167,20 @@ This is the authorized recovery path — not inventing bypass files. Local chats
 
 ## Anti-patterns (do not)
 
-- Ending the turn after Phase 1 §4 report when fixable HIGH/MEDIUM remain (waiting for Matt to authorize Phase 2)
-- Treating “report before fix writes” as a pause-for-ack checkpoint
-- Patching before the mandatory report sections exist
+- Pausing for Matt between the §4 report and Phase 2, or patching before the §4 report exists (Same-turn continue + two-step order above)
 - Confirm+fix in a single `audit-verifier` Task dispatch
 - Solo-auditing in the orchestrator thread instead of dual critics + verifier
 - Treating this as implicit `approved — build` for new features or broad multi-file work
-- Substituting bugbot-only output for Action summary / Verification ledger / Plan completion
-- Defaulting bugbot on session track without Matt opt-in
+- Substituting bugbot-only output for the mandatory report sections, or defaulting bugbot on without Matt opt-in
 - Auditing repo-wide `git diff` or pre-session WIP instead of this thread's file set
-- Stopping after one fix round when `/myauditandfix` was invoked and audit is not green (max 4 rounds per command)
-- Declaring **Green: Y**, “no more HIGH,” or “all clear” immediately after Phase 2 **without** a post-fix full or `DELTA_CHECK` confirm Task
-- Treating `NEW_HIGH_FROM_FIX: false` as green or as a substitute for re-audit
-- Using confirm-only delta when the prior confirm had any HIGH (must full re-audit until a confirm returns zero HIGH)
-- Using confirm-only delta when the fix introduced a new HIGH / HIGH regression (must full re-audit)
+- Stopping before green without stop-early or the 4-round cap
+- Declaring **Green: Y** / "no more HIGH" after Phase 2 without a post-fix full or `DELTA_CHECK` confirm Task (`NEW_HIGH_FROM_FIX: false` is not green and not a re-audit substitute)
+- Confirm-only delta outside its two conditions — prior confirm had any HIGH, or the fix introduced a new HIGH / HIGH regression → full re-audit until a confirm returns zero HIGH
 - Declaring **Green: Y** on a code session without a completed latest `prepr_audit.py --worktree --prepare` run for the current fingerprint, or treating prepr alone as a substitute for dual critics/verifier
-- Dropping the prepr prepare bundle from the artifact pack
+- Dropping the prepr prepare bundle (or its temp-file path) from the artifact pack
 - Running prepr inside `/commitprmerge` instead of `/myauditandfix`
 - Running `--worktree` without `--path` for the session file set (audits pre-session WIP)
 - Running prepr without `--prepare` in myaudit (`--worktree` without `--prepare` is legacy worktree dispatch/stamp; branch mode is no `--worktree`, may use `--post` — neither used in myaudit)
-- Skipping delta **`bug_hunt`** critic on code-session `DELTA_CHECK` rounds (docs-only delta may skip all critics)
-- Using confirm-only delta on code sessions without re-running prepr prepare and attaching the current bundle
+- Skipping delta **`bug_hunt`** critic on code-session `DELTA_CHECK` rounds (docs-only delta may skip all critics), or delta without a re-run prepr prepare bundle
+- Using the no-auditable-surface fast path when the thread has session writes or load-bearing claims — or emitting `Green: Y` from it
+- Self-selecting `quick` depth absent Matt's words
