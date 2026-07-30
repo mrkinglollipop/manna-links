@@ -1,15 +1,15 @@
 ---
 name: iterate
-description: Autonomous improve loop — lenses working/bugs/gaps/polish, todos + durable run log, fix existing surface (max 4 rounds)
+description: Deep iterate — parent parallel finders, serial fixer, lenses working/bugs/gaps/polish/product, per-lens budgets, tool utilization
 ---
 
 # Iterate
 
-**Authoritative contract:** `.cursor/skills/iterate/SKILL.md`. This command **authorizes the fix phase** (unless trailing `find-only` / `audit-only`).
+**Authoritative contract:** `.cursor/skills/iterate/SKILL.md`. This command **authorizes
+the fix phase** (unless trailing `find-only` / `audit-only`).
 
-Iterate = constructive improve. It is **not** the session-audit command (claims and
-correctness). Command docs are injected into the user turn, so this file never spells
-sibling slash names — that made every iterate turn read as an audit session.
+Iterate = constructive improve on existing surface. Command docs are injected into the
+user turn — this file never spells sibling slash names.
 
 ## Where this command lives
 
@@ -25,59 +25,64 @@ bash "/Volumes/Cloud Storage/Claude/.cursor/scripts/sync-harness.sh"
 | Token | Effect |
 |-------|--------|
 | (none) | Lens = `working` only |
-| `lenses=all` | working → bugs → gaps → polish (**4 lenses**, global max **4** rounds, per-lens max **2** — a second cycle on an early lens can force later lenses skipped at cap-stop; not Green:Y) |
+| `lenses=all` | working → bugs → gaps → polish → product (per-lens max **2** passes: find + recheck; honesty in Mission plan) |
 | `lenses=a,b` | Explicit list, left-to-right CSV order |
-| `lens=<name>` / bare `polish` / `bugs` / `gaps` / `working` | Single lens |
+| `lens=<name>` / bare `polish` / `bugs` / `gaps` / `working` / `product` | Single lens |
 | `find-only` / `audit-only` | No fix writes (run log still written) |
 | `resume=<path\|id>` | Resume run log (required when 2+ in-progress runs match) |
 | path / repo | Target `$REPO_ROOT` |
 
-## Pipeline
+## Pipeline (parent-owned)
 
 1. Resolve host + `$REPO_ROOT` (git top-level of target).
 2. **Parent before dispatch:** parse lenses; resolve fresh vs resume; cheap-read
    primary workflow. Implicit resume only if **exactly one** matching
    `status: in-progress` for `repo_root:`; zero → fresh; **2+ → stop and ask**
    Matt with explicit `resume=<path|id>` (list candidates; never latest-mtime).
-   `run_mode=fresh` → create/print plan shell + parent TodoWrite (state
-   `lenses=all` / global-4 honesty when applicable). `run_mode=resume` →
-   read/print EXISTING run-log Mission plan + reconstruct TodoWrite (do not
-   overwrite plan rows).
-3. Dispatch **once** to `iterate` with `run_mode=fresh|resume`, run-log path/id, and
-   exact plan rows (`hosts.<host>.iterate`, model omit/inherit). Hire fail → solo
-   (parent TodoWrite live). Child seeds (fresh) or updates existing rows (resume);
-   never mutates parent TodoWrite. Hired mode = initial plan + automatic replay
-   after return — do not promise live parent Todo updates.
-4. Child owns lens loop + durable plan/log updates + Round reports + fixes. Parent:
-   desktop-drive consent if needed; after return, reconcile TodoWrite once from
-   final run log; reconstruct every Round report + **Findings summary** +
-   **Plan outcome** + **run-log path** if child output was incomplete. If child
-   fails/denied/incomplete/counts-only: inspect known run-log path — readable →
-   surface partial plan/rounds + resume id, leave `in-progress`; unreadable →
-   unverified failure (no fabricated Green/findings).
-5. Lens skills read **inline** — no nested Task per lens.
-6. **One turn, many rounds.** Every round (incl. final) updates plan then emits
-   Round report before any exit finalization / Mission summary (SKILL §5).
-   Cap-stop names skipped lenses; never invent plan status `capped`.
+   `run_mode=fresh` → seed `schema_version: 2` run log + print `## Mission plan` +
+   parent TodoWrite (`lenses=all` / per-lens budget honesty). `run_mode=resume` →
+   read EXISTING Mission plan + reconstruct TodoWrite (do not overwrite plan rows).
+3. **Wave A:** parallel `iterate-finder` per requested lens (`pass=find`) → merge +
+   dedupe → **Phase report** A (Tools used / Tools missing / coverage).
+   If host Task enum lacks `iterate-finder`, escape: `generalPurpose` +
+   `.cursor/agents/iterate-finder.md` (same for fixer → `iterate-fixer.md`).
+4. **Fix batch 1:** `iterate-fixer` on merged backlog — **skip in find-only**.
+5. **Wave B:** parallel `iterate-finder` recheck on touched lenses → Phase report C —
+   **skip in find-only** (no recheck/fix waves).
+6. **Fix batch 2** (optional, budget remaining): `iterate-fixer` → Phase report D —
+   **skip in find-only**.
+7. Finalize Presmoke/Psynth; Mission summary + Findings summary + Plan outcome.
+   **Parent updates TodoWrite live between phases.**
 
-**You always receive (no ask):** initial `## Mission plan` **before** dispatch/Round 1;
-full per-round Round reports with Plan update (replayed by parent after hire if
-needed); automatic final compact summary + Findings summary (every finding with
-title/severity/status/resolution/evidence) + Plan outcome; run-log path.
+**Ceilings:** fix mode max finder dispatches = `2 × N_requested_lenses`; **find-only**
+max finder dispatches = `N_requested_lenses` (Wave A only). Max fixer batches = **2**;
+max oracle runs = **3 per fix batch**. product lens never blocks Green.
+
+**Incomplete / crashed hire recovery (HARD):** If a finder/fixer fails, is denied, or
+returns incomplete schema, parent inspects the known run-log path.
+
+- **Readable:** surface partial plan/phases + `resume=<path|id>`; leave
+  `status: in-progress`.
+- **Unreadable:** unverified failure; do not fabricate Green or findings.
+
+**You always receive (no ask):** initial `## Mission plan` before Wave A; Phase reports
+per wave/batch; final summary tables; run-log path.
 
 ## Host dispatch
 
-| Host | Tool | Type | Model |
-|------|------|------|-------|
-| cursor | Task | `iterate` (escape `generalPurpose` + agent md) | omit / inherit |
-| grok | spawn_subagent | general-purpose + agent md | omit always |
-| claude | Agent | general-purpose + agent md | omit always |
+| Host | Tool | Finder | Fixer | Model |
+|------|------|--------|-------|-------|
+| cursor | Task | `iterate-finder` | `iterate-fixer` | omit / inherit |
+| grok | spawn_subagent | general-purpose + finder md | general-purpose + fixer md | omit |
+| claude | Agent | general-purpose + finder md | general-purpose + fixer md | omit |
+
+Legacy `iterate` entry = thin redirect to fixer (parent owns loop).
 
 ## Green / stop
 
-See skill. Round caps: per-lens 2, global 4 (global wins). Stop-early when only Matt
-blockers remain — **stop-early due Matt-only blockers always yields `Green: N`**
-(never Green:Y); plan may be terminal/`status: done` while Green remains N.
+See skill. Per-lens max 2 passes (find + recheck). budget-stop when ceilings hit.
+**stop-early due Matt-only blockers always yields `Green: N`** (never Green:Y).
 Presmoke: omit when re-smoke known N/A; if present and N/A → `skipped` (`not
 applicable`); when run → `complete` with evidence.
-Psynth finalization: `pending`/`in_progress` → `in_progress` while synthesizing → `complete` before Plan outcome.
+Psynth: from `pending` or `in_progress` → `in_progress` while synthesizing → `complete`
+before Plan outcome.
