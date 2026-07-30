@@ -26,8 +26,9 @@ Below-floor coverage on a required floor → emit at least one MEDIUM
 | MEDIUM | Correctness edge, missing stated requirement, partial coverage floor miss |
 | LOW | Polish, consistency, minor UX, non-blocking proposals |
 
-Cap **8** findings per finder dispatch. Parent mission finding cap **12** merged
-open H/M (overflow → `deferred_overflow` / `## Deferred (over budget)`).
+Cap **8** findings per finder dispatch. Parent mission finding cap **12** keep-slots
+of merged open H/M (overflow → `deferred_overflow` / `## Deferred (over budget)`);
+`*presmoke-failed` sits outside the 12-slot keep count (see merge rules).
 
 ## Evidence
 
@@ -79,17 +80,24 @@ step when applicable).
 
 | Floor | Requirement |
 |-------|-------------|
-| Category coverage | ≥1 checked category per inventoried surface: correctness \| edge \| silent-failure \| a11y-functional |
-| Hot paths | Primary workflow + files touched in recent session context |
+| Category coverage | ≥1 checked category per inventoried surface: correctness \| edge \| silent-failure \| a11y-functional \| security \| performance |
+| Hot paths | Primary workflow + files touched in recent session context — **inventory under `$SCOPE_ROOT` only** |
 | Oracles | At least one automated check (test/build/lint) when repo provides |
 
 ### gaps
 
 From named intent sources, list every discrete requirement.
 
+**Scope reconciliation (HARD):** inventory and exercise targets stay under
+`$SCOPE_ROOT`. Intent sources outside `$SCOPE_ROOT` (e.g. repo-root README when
+scope is a deep subtree, thread contract, plan outside scope) may be **read-only evidence/cites** —
+they are **not** inventory surfaces and **not** fix targets. Never write outside
+`$SCOPE_ROOT`. When an intent cite is outside scope, mark the requirement's in-scope
+surface present/partial/missing/N/A with evidence inside scope only.
+
 | Floor | Requirement |
 |-------|-------------|
-| Intent sources | README, CLAUDE.md, plan, thread contract — cite which |
+| Intent sources | README, CLAUDE.md, plan, thread contract — cite which (in-scope preferred; outside-scope cite OK as read-only) |
 | P0 | Primary-workflow / must-ship for the stated product to work |
 | P1 | Explicitly listed secondary requirements in the same intent doc/thread |
 | Check floor | 100% of P0+P1 checked or N/A with cite |
@@ -124,6 +132,21 @@ When merging parallel finder returns:
    (e.g. `working-1`). Do not invent a parallel `ITER-<n>` scheme.
 5. Dedupe by symptom / root cause / surface before fixing.
 6. Recheck pass updates existing IDs only; new regressions get new IDs.
+7. **12-cap tie-break (HARD):** fill at most **12** keep-slots of Status=`open`
+   HIGH/MEDIUM by severity (HIGH before MEDIUM), then requested-lens order, then
+   durable merged ID `<lens>-<n>` ascending (parent-assigned in Wave A merge order:
+   requested lens order, then each finder's return-table row order). Overflow →
+   `deferred_overflow`. **HARD — `*presmoke-failed` slot accounting:** id matching
+   `*presmoke-failed` sits **outside** the 12-slot keep count (does not compete for
+   keep-slots); never `deferred_overflow`; stays Status=`open` until Presmoke re-pass
+   or Matt cancel (Green #1 still fails via open H/M). Apply at Wave A merge and
+   **re-apply after Wave B** merge of recheck returns (including new regression IDs).
+8. **Cross-lens reclassification (HARD):** parent may reassign a misfiled finding's
+   lens at merge only when HIGH-severity correctness or clearly P0/P1 gaps-shaped;
+   record a one-line reassignment reason in Finding detail. When reassigning away
+   from `product`, set Status `logged` → `open` for HIGH/MEDIUM (record both changes).
+   After reassignment a former product item CAN block Green. "Feels more important"
+   is not grounds.
 
 ## Find-only mode
 

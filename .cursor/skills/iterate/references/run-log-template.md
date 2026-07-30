@@ -4,6 +4,7 @@
 - Started: <ISO-8601 UTC>
 - Updated: <ISO-8601 UTC>
 - repo_root: <absolute path>
+- Scope: <repo-relative normalized subpath> (<absolute scope_root>)
 - status: in-progress|done
   (top-level run status uses hyphen `in-progress`; plan-step statuses use underscore
   `in_progress` — never mix when matching resume)
@@ -28,24 +29,36 @@ fix mode unless validly deferred; in **find-only** stay `logged`).
 
 `blocked-on-Matt` is a finding status only — never a plan-step status.
 
-**Presmoke terminalization:** **omit** the Presmoke row when re-smoke is known N/A; if
-present and later N/A, `skipped` with evidence `not applicable`; when applicable and run,
-`complete` with evidence.
+**Presmoke terminalization:** **always seed** a Presmoke row in fix mode. At finalize
+mark `skipped` with evidence `zero-edit` / `empty-backlog` only — never omit the row
+after seed; omission at plan creation only in `find-only`; **never** use `find-only` or
+`not applicable` as finalize skip evidence. When Presmoke runs → `complete` with
+evidence (pass) or `complete` with fail evidence + open MEDIUM `*presmoke-failed`.
 
 **Psynth sequence:** template seeds `Psynth` as `pending`; transition from `pending`
 **or** `in_progress` → `in_progress` while synthesizing → `complete` immediately before
 Plan outcome; then `status: done`, Updated, Green / stop reason.
 
-Resume: exactly one `status: in-progress` for `repo_root:` (**exactly one** matching);
-**2+** matching in-progress → parent stops for explicit `resume=`. Never reopen
-`status: done`. Do not fall back to latest-mtime completed logs.
+Resume: requires `schema_version: 2` in the candidate log (missing or lower → unreadable;
+stop, surface path, ask disposition — never silently upgrade). exactly one `status: in-progress`
+for `repo_root:` (**exactly one** matching); **2+** matching in-progress → parent stops for
+explicit `resume=`. Never reopen `status: done`. Do not fall back to latest-mtime completed
+logs. Run-log `Mode:` wins over conflicting trailing text (stop and ask).
+
+**Resume scope ordering (HARD):** determine fresh vs resume and select normalized scope
+**before** resolving `$SCOPE_ROOT` or any scoped read/log/dispatch. Recorded `Scope:`
+wins on resume; trailing `scope=` conflict → stop and ask. Legacy logs lacking `Scope:` →
+interpret as `.` (repo root); trailing non-`.` `scope=` that conflicts → stop (no silent
+broaden/narrow); record interpretation on next parent write when proceeding. Scope subpath
+must resolve to an existing **directory** (file-valued scope invalid — stop before
+reads/log/dispatch).
 
 | Step | Lens | Objective / gate | Status | Finding IDs | Evidence / next |
 |------|------|------------------|--------|-------------|-----------------|
 | P1 | <requested-lens-1> | find + recheck gate | pending | | |
 | P2 | <requested-lens-2> | find + recheck gate | pending | | |
 | … | … | … | pending | | |
-| Presmoke | — | final working re-smoke (omit row if not applicable) | pending | | |
+| Presmoke | — | final working re-smoke (always seed in fix mode; skip only zero-edit/empty-backlog) | pending | | |
 | Psynth | — | final synthesis | pending | | |
 
 ## Coverage summary
@@ -80,8 +93,14 @@ Exactly one detail block per backlog row (required).
 - **How (planned):** <how-planned>
 - **How (done):** <how-done>
 - **Resolution / blocker:** <resolution-or-blocker>
-- **Evidence:** <evidence> (or unverified)
+- **Evidence:** <evidence> (or `fixed (unverified — fixer oracle only)` for batch-2
+  fixed findings lacking independent Presmoke coverage; or unverified)
 - **Status:** open|logged|fixed|deferred|deferred_overflow|blocked-on-Matt|cancelled
+- **Primary path:** <absolute path> (first Paths/What cite; recorded at merge if missing)
+
+**`presmoke-failed` minimum schema (when used):** id = `presmoke-failed` or
+`working-presmoke-failed` or `<first-requested-lens>-presmoke-failed`; severity MEDIUM;
+status `open`; sits **outside** the 12-slot keep count (never `deferred_overflow`).
 
 ## Phase log
 
@@ -120,7 +139,9 @@ One block per phase (not Round). Parent emits **Phase report** after each phase.
 - **Skipped lenses:** <list + reason on budget-stop>
 - **Green:** Y|N — <reason>
 - **HARD:** stop-early due Matt-only blockers always yields `Green: N` (never Green:Y).
-  budget-stop with skipped lenses = `Green: N`. Plan `status: done` does not imply Green:Y.
+  budget-stop with skipped lenses = `Green: N`. Below-floor on any requested lens =
+  `Green: N` (fix and find-only; logged findings do not clear). Plan `status: done`
+  does not imply Green:Y.
 
 ## Deferred (over budget)
 

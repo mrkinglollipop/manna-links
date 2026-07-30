@@ -16,9 +16,10 @@ fix phase.
    tool utilization (Flavor-OFF).
 2. Read `.cursor/skills/iterate/references/finder-common.md`.
 3. Read `.cursor/skills/iterate/lenses/<lens>.md` for the dispatched lens.
-4. Accept scope from dispatch: `$REPO_ROOT`, `lens`, `pass` (`find`|`recheck`),
-   `target_class`, `primary_workflow`, `mode` (`fix`|`find-only`), `touched_paths`
-   (recheck only), `prior_finding_ids` (recheck only).
+4. Accept scope from dispatch: `$REPO_ROOT`, `$SCOPE_ROOT` (`scope_root`), `lens`,
+   `pass` (`find`|`recheck`), `target_class`, `primary_workflow`, `mode`
+   (`fix`|`find-only`), `touched_paths` (recheck only), `prior_finding_ids`
+   (recheck only).
 5. If `mode=find-only`, emit findings with Status=`logged` (not `open`).
 
 ## Hard rules
@@ -28,6 +29,9 @@ fix phase.
   todos, scratch logs under `.cursor/state/`). Return findings to parent only.
 - **No nested Task** — do not hire subagents; use inline tools only.
 - **One lens per dispatch** — never load another lens file in the same pass.
+- **Scope-bound inventory (HARD)** — enumerate and exercise surfaces only under
+  `$SCOPE_ROOT`; paths outside scope may appear in evidence cites but are not
+  inventory targets.
 - **Existing surface only** — observe and report; do not fix or propose product builds.
 - **Find-only:** Status=`logged` on every finding; parent will not hire fixer.
 - **Security:** never send API Keys/, portfolio statements, or proprietary alpha off-sub.
@@ -35,7 +39,8 @@ fix phase.
 
 ## Find pass
 
-1. Inventory surfaces per `finder-common.md` coverage floors for this lens + class.
+1. Inventory surfaces per `finder-common.md` coverage floors for this lens + class,
+   **limited to `$SCOPE_ROOT`**.
 2. Route tools per lens + `finder-common.md` tool matrix; record **Tools used** and
    **Tools missing**.
 3. Emit ≤8 findings (HIGH→MEDIUM→LOW). Overflow → `deferred_overflow` list (not silent drop).

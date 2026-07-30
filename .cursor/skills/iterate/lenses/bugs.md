@@ -2,7 +2,8 @@
 
 ## Question
 
-What correctness, edge, silent-failure, or a11y-functional defects exist on inventoried surfaces?
+What correctness, edge, silent-failure, a11y-functional, security, or performance
+defects exist on inventoried surfaces?
 
 ## In
 
@@ -10,6 +11,10 @@ What correctness, edge, silent-failure, or a11y-functional defects exist on inve
 - Edge inputs, empty states that fail functionally
 - Silent failures (swallowed errors, false success)
 - Functional a11y blockers (unreachable controls, missing labels that break use)
+- Security defects on inventoried surfaces (auth gaps, injection, secret exposure,
+  unsafe defaults that break the security floor)
+- Performance defects that break primary workflow or make it unusable (hangs,
+  unbounded work, pathological latency on hot paths)
 
 ## Out
 
@@ -20,8 +25,8 @@ What correctness, edge, silent-failure, or a11y-functional defects exist on inve
 ## Coverage floor (HARD)
 
 See `references/finder-common.md` — bugs floor: ≥1 checked category per inventoried
-surface (correctness | edge | silent-failure | a11y-functional); at least one
-automated oracle when the repo provides one.
+surface (correctness | edge | silent-failure | a11y-functional | security |
+performance); at least one automated oracle when the repo provides one.
 
 ## Tool routing
 
@@ -31,7 +36,8 @@ doctor only (a11y N/A → Tools missing). Record **Tools used** / **Tools missin
 
 ## Steps
 
-1. Inventory hot paths (primary workflow + recent session touchpoints).
+1. Inventory hot paths **under `$SCOPE_ROOT`** (primary workflow + recent session
+   touchpoints that fall inside scope). Do not inventory outside-scope paths.
 2. For each surface, check ≥1 category with evidence.
 3. Cap 8 findings; prioritize HIGH/MEDIUM for fixer.
 
