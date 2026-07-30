@@ -2,25 +2,42 @@
 
 ## Question
 
-Did we **exercise** the primary workflow and see it succeed?
+Does the primary workflow actually work end-to-end for the stated product?
 
 ## In
 
-- Launch/build + drive primary path (a11y first, then screenshot if visuals matter)
-- Cloud: build/analyze only or BLOCKED visual — never fake VISUAL PASS
+- Launch/build/run of the target
+- Primary journey (entry → success → exit)
+- One empty/error/persistence step when applicable
+- Class verify lane (xc-mcp, electron-oracle, browser, smokes)
 
 ## Out
 
-- Diff-only judgment
-- Inventing new workflows
+- Feature invention (`product`)
+- Spec gaps vs docs (`gaps`) unless they break the primary path
+- Pure visual polish without functional impact (`polish`)
+
+## Coverage floor (HARD)
+
+See `references/finder-common.md` — working floor:
+
+1. Decompose primary workflow into **3–7** ordered journey steps.
+2. Mark each with `journey_step: true` in coverage.inventory.
+3. Drive ≥80% of steps **or** BLOCKED + tool-missing per undriven step.
+4. Launch/build evidence required — no diff-only "working".
+
+## Tool routing
+
+Use class row from finder-common tool matrix. Prefer a11y-first over screenshots.
+Record **Tools used** / **Tools missing**.
 
 ## Steps
 
-1. Name the primary workflow in one sentence (from contract/README/Matt).
-2. Run the class verify lane (see iterate skill target table).
-3. Prefer a11y tree before screenshot.
-4. Record pass/fail + evidence in the run log.
+1. Name primary workflow in one sentence.
+2. Build journey checklist (3–7 steps).
+3. Exercise with class tools; record pass/fail/BLOCKED per step.
+4. Emit findings for broken steps (HIGH) and below-floor coverage (MEDIUM+).
 
 ## Hard stop
 
-If you did not launch/exercise the primary path (or explicitly BLOCKED visual on Cloud), you may not mark `working` verified.
+Do not redefine the product. Missing launch tools → BLOCKED finding, not fake Green.

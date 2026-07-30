@@ -2,24 +2,38 @@
 
 ## Question
 
-What is missing vs **stated** intent / plan / contract / Matt request?
+Which stated requirements (docs/plan/thread) are missing or only partially shipped?
 
 ## In
 
-- Stated requirements not shipped
-- Incomplete primary workflow vs docs
+- README / CLAUDE.md / plan / Deliverable Contract / thread intent
+- P0 primary-workflow must-ships
+- P1 explicitly listed secondary requirements
 
 ## Out
 
-- Inventing features Matt did not ask for
-- Taste-only polish (use polish)
+- Unnamed wishlist / invented scope (`product` if friction-only; else blocker)
+- Pure polish without a stated requirement
+- Auto-implementing new surface without Matt approval
+
+## Coverage floor (HARD)
+
+See `references/finder-common.md` — gaps floor: list every discrete requirement from
+named intent sources; **100% of P0+P1** checked or N/A with cite. If intent has no
+priority labels, treat primary-workflow requirements as P0 and other cited bullets as P1.
+
+## Tool routing
+
+Read intent sources first; exercise missing surface with class tools when claiming a
+gap. Record **Tools used** / **Tools missing**.
 
 ## Steps
 
-1. Collect stated intent (plan, contract, README, thread).
-2. Diff intent vs shipped surface.
-3. Cap 8 findings; overflow → Deferred.
+1. Cite intent sources.
+2. Enumerate P0/P1 requirements.
+3. Mark each present / partial / missing / N/A with evidence.
+4. Cap 8 findings.
 
 ## Hard stop
 
-If intent is unnamed, ask once or log blocker — do not invent scope.
+Unnamed intent → blocker finding, not a feature list. Do not invent requirements.

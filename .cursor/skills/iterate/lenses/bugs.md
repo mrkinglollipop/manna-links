@@ -2,24 +2,39 @@
 
 ## Question
 
-What is broken, wrong, or silently failing in existing behavior?
+What correctness, edge, silent-failure, or a11y-functional defects exist on inventoried surfaces?
 
 ## In
 
-- Correctness, edge cases, regressions, crash paths, wrong results
+- Wrong results, crashes, race/state bugs
+- Edge inputs, empty states that fail functionally
+- Silent failures (swallowed errors, false success)
+- Functional a11y blockers (unreachable controls, missing labels that break use)
 
 ## Out
 
-- Polish/copy (use polish)
-- Missing features vs intent (use gaps)
-- New product surfaces
+- Spec gaps vs docs without a defect (`gaps`)
+- Pure polish / copy (`polish`)
+- Roadmap features (`product`)
+
+## Coverage floor (HARD)
+
+See `references/finder-common.md` — bugs floor: ≥1 checked category per inventoried
+surface (correctness | edge | silent-failure | a11y-functional); at least one
+automated oracle when the repo provides one.
+
+## Tool routing
+
+Class verify lane + cheapest automated check (test/build/lint). a11y describe for
+functional a11y when the class has a UI surface — **harness/loom/aegis:** smokes +
+doctor only (a11y N/A → Tools missing). Record **Tools used** / **Tools missing**.
 
 ## Steps
 
-1. Exercise or read the surfaces touched by the target.
-2. List up to 8 findings by severity (HIGH first).
-3. Evidence required (oracle, repro, or file cite).
+1. Inventory hot paths (primary workflow + recent session touchpoints).
+2. For each surface, check ≥1 category with evidence.
+3. Cap 8 findings; prioritize HIGH/MEDIUM for fixer.
 
 ## Hard stop
 
-No inventing product. No drive-by refactors beyond fixing listed bugs.
+No speculative refactors. No inventing defects without evidence.
