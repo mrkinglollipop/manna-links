@@ -14,11 +14,12 @@ Load first. Resolves conflicts between other `.cursor/rules/*.mdc` files and Cur
 ```
 /Volumes/Cloud Storage/Claude/**
 /Volumes/Cloud Storage/Code/**
+~/Projects/**
 ```
 
-**Outside writable scope** (including `~/Projects/**`, `~/.claude/`, archived `CURSOR/`, and any path not listed above):
+**Outside writable scope** (including `~/.claude/`, archived `CURSOR/`, and any path not listed above):
 - **READ ONLY** — `Read`, `Grep`, `Glob`, `query_graph.py`, git log/status/diff (no writes), shell commands that do not mutate files
-- **Mutations outside writable scope** — `Write`, `StrReplace`, `Delete`, `git commit/push/add/rm`, installs, daemon changes, etc. — require Matt **explicitly authorizing that path in-thread** (clarify-first checkpoint; e.g. "yes, edit `~/Projects/ft-command/...`")
+- **Mutations outside writable scope** — `Write`, `StrReplace`, `Delete`, `git commit/push/add/rm`, installs, daemon changes, etc. — require Matt **explicitly authorizing that path in-thread** (clarify-first checkpoint; e.g. "yes, edit `~/.claude/...`")
 
 If a task requires a write outside the writable scope above:
 1. **STOP immediately**
