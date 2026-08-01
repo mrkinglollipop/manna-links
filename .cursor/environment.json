@@ -1,3 +1,0 @@
-{
-  "install": "mkdir -p \"$HOME/.npm-global\" \"$HOME/.local/bin\" \"$HOME/.local/share/venvs\" && npm config set prefix \"$HOME/.npm-global\" && export PATH=\"$HOME/.local/bin:$HOME/.npm-global/bin:$PATH\" && VENV=\"$HOME/.local/share/venvs/pdf-inspector\" && (test -x \"$VENV/bin/python\" || python3 -m venv \"$VENV\") && \"$VENV/bin/pip\" install -q --upgrade pdf-inspector==0.2.6 && printf '%s\\n' '#!/usr/bin/env bash' \"exec \\\"$VENV/bin/python\\\" \\\"\\$@\\\"\" > \"$HOME/.local/bin/pdf-inspector-py\" && chmod +x \"$HOME/.local/bin/pdf-inspector-py\" && npm install -g @firecrawl/pdf-inspector@1.11.2"
-}
