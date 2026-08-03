@@ -35,6 +35,8 @@ Common gate commands:
 - `npm run build && tsc`
 - `xcodebuild` / `bash "/Volumes/Cloud Storage/Claude/.cursor/ios-build-verify.sh" REPO_ROOT`
 
+**Shell / pipefail (Night School 1689):** Under `pipefail`, do not trust a pipeline’s exit when a later stage (`head`, etc.) can mask upstream failure. **Do not use `PIPESTATUS`.** Capture with `|| var=$?` (or `|| ec=$?`) on the **failing leg only**, then inspect that variable — e.g. `cmd || ec=$?`.
+
 Codegen workers may pre-screen; orchestrator gate still applies.
 
 ## Hard cap

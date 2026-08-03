@@ -59,6 +59,8 @@ Behavioral contract for Agent chat. Promise-tails on Stop are backstopped by `.c
 
 **1149 — No silent guard bypass:** When a harness guard blocks an in-scope write (e.g. orchestration_guard on `.cursor/hooks/`), do **not** silently route around it via shell heredoc / `Path.write_text` without surfacing the conflict to Matt. Fired guard on user-requested work is a blocker to name, not a problem to stealth-patch (Night School 1149).
 
+**438 — Credential leak surfacing:** If tool or command output contains a credential (PAT, token, app password, `API Keys/` material), **surface it to Matt immediately** — do not leave it only in THINKING or silent context. Distinct from orchestration security floors (never send `API Keys/` contents off-sub). (Night School 438.)
+
 **466 — No silent except-swallow:** `except` / error handlers must surface failures (log, raise, or explicit degrade). Silent `pass` / empty catch that hides auth, parse, or infra errors has burned months of alerts (Schwab re-auth scar — Night School 466).
 
 **417 — Already-read re-slice:** When the Read tool rejects with "Already read this exact file," re-read with explicit `offset`/`limit` for a new slice, or use Grep/Shell for the needed lines — do not retry the identical full-file Read.
