@@ -21,7 +21,7 @@ hosts:
       # Escape hatch when native type missing from Task enum:
       escape_type: generalPurpose
       prompt_from: .cursor/agents/session-auditor.md
-      model: composer-2.5-fast
+      model: composer-2.5
       model_policy: pin_required
       readonly: true
     adjudicator:
