@@ -104,7 +104,7 @@ Paid web budget is separate from each critic's 3 oracle-run cap.
 
 **Same-turn continue (HARD):** After the §4 report is surfaced in the orchestrator message, if the audit is **not green** and **not stop-early**, **immediately** dispatch Phase 2 (`fix_authorized=true`) in the **same turn** — do **not** wait for Matt acknowledgment, “continue”, or “go fix”. `/myauditandfix` / `/verify-plan` already authorize the fix phase. Two-step only constrains **order** (report text before fix writes) and forbids confirm+fix in one Task — it is **not** a human checkpoint between phases.
 
-**Host dispatch (HARD):** resolve critic + adjudicator from **`.cursor/dispatch-settings.yaml`**. Cursor: pin critic `composer-2.5-fast`, adjudicator **omit-first** (optional `cursor-grok-4.5-high` only; never Composer/k3). **Grok/Claude: model omit always** (harness default — do not pin Cursor or composer slugs). Escape hatch = host profile escape type + read agent `.md` with the **same host** model policy. Native types preferred on Cursor when available.
+**Host dispatch (HARD):** resolve critic + adjudicator from **`.cursor/dispatch-settings.yaml`**. Cursor: pin critic `composer-2.5`, adjudicator **omit-first** (optional `cursor-grok-4.5-high` only; never Composer/k3). **Grok/Claude: model omit always** (harness default — do not pin Cursor or composer slugs). Escape hatch = host profile escape type + read agent `.md` with the **same host** model policy. Native types preferred on Cursor when available.
 
 **Stop early — Blocked on Matt:** when every remaining HIGH/MEDIUM is Blocked on Matt and none are fixable in-session, exit the `/myauditandfix` / `/verify-plan` loop immediately (`Green: N`); do not burn further rounds. See command Phase 3.
 

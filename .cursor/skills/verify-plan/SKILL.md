@@ -45,7 +45,7 @@ Every dispatch for a round must include:
 
 **Pack once (speed):** compose the artifact pack **once per round**; paste the identical block into every dispatch that round. Cap inline oracle log tails at ~40 lines; do not inline plan file contents critics can read from the plan file set.
 
-**Host dispatch (HARD):** resolve from **`.cursor/dispatch-settings.yaml`**. Cursor critics pin `composer-2.5-fast`; adjudicator **omit-first** (optional `cursor-grok-4.5-high` only; **never Composer**/k3 as adjudicator). **Grok/Claude omit model always**. Escape hatch uses host profile + agent `.md`.
+**Host dispatch (HARD):** resolve from **`.cursor/dispatch-settings.yaml`**. Cursor critics pin `composer-2.5`; adjudicator **omit-first** (optional `cursor-grok-4.5-high` only; **never Composer**/k3 as adjudicator). **Grok/Claude omit model always**. Escape hatch uses host profile + agent `.md`.
 
 ## 1. Orient + Freshness pass (graph-first — full re-audit)
 
