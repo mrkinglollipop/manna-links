@@ -62,7 +62,7 @@ Parent-tool inventory is a Cursor product feature on the *orchestrator* turn —
 
 1. Prefer **`AskQuestion`** (modal) when the tool exists in this turn's tool list.
 2. If `AskQuestion` is **missing** / errors ("Tool not found", "couldn't pop up") → ask the **same two questions in chat prose** (numbered options) and **STOP**. Do not proceed with invented defaults. Prose picker is success, not degradation theater.
-3. Known product gap (**verified** in memory): some parents (notably **Grok 4.5**, sometimes others) do not expose `AskQuestion`. Do not claim “popup failed due to research skill” when the tool is absent.
+3. Known product gap (**verified** in memory): some parents (notably **Grok 4.5 / 4.6**, sometimes others) do not expose `AskQuestion`. Do not claim “popup failed due to research skill” when the tool is absent.
 
 ### Question 1 — Effort
 
@@ -78,9 +78,11 @@ Web evidence is always Tavily + Firecrawl + YouTube (not selectable). LLM roles 
 
 | Profile ID | Label | Researchers | Synthesizer | Adjudicator |
 |------------|-------|-------------|-------------|-------------|
-| `default` | **Default (Recommended)** — mixed pool, Grok synth | grok-4.5, deepseek-v4-pro, MiniMax-M3 | grok-4.5 | grok-4.5 |
-| `grok-only` | All Grok — fastest, single provider | grok-4.5 ×3 | grok-4.5 | grok-4.5 |
-| `mixed-economy` | Grok + DeepSeek — no MiniMax | grok-4.5, deepseek-v4-pro | grok-4.5 | grok-4.5 |
+| `default` | **Default (Recommended)** — mixed pool, Cursor-billed Grok synth | cursor-grok-4.6-high, deepseek-v4-pro, MiniMax-M3 | cursor-grok-4.6-high | cursor-grok-4.6-high |
+| `grok-only` | All Grok via Cursor subscription (not xAI API) | cursor-grok-4.6-high ×3 | cursor-grok-4.6-high | cursor-grok-4.6-high |
+| `mixed-economy` | Cursor Grok + DeepSeek — no MiniMax | cursor-grok-4.6-high, deepseek-v4-pro | cursor-grok-4.6-high | cursor-grok-4.6-high |
+
+Grok roles bill through **Cursor** (`cursor-agent` + plan pool). Metered `api.x.ai` only if `provider: xai` or `DEEP_RESEARCH_GROK_VIA=xai`.
 
 Profiles: `scripts/deep_research/profiles/{id}.yaml`. Pass `--profile <id>` to `run.py`.
 

@@ -33,7 +33,7 @@ One Task:
 
 - `subagent_type`: `explore` or `generalPurpose`
 - `readonly`: `true`
-- `model`: `cursor-grok-4.5-medium`
+- `model`: `cursor-grok-4.6-medium`
 
 Agent explores and writes the explanation. Use `references/explainer-prompt.md`.
 
@@ -43,12 +43,12 @@ Agent explores and writes the explanation. Use `references/explainer-prompt.md`.
 2. Spawn all explorers in one message:
    - `subagent_type`: `explore` or `generalPurpose`
    - `readonly`: `true`
-   - `model`: `cursor-grok-4.5-medium`
+   - `model`: `cursor-grok-4.6-medium`
    - Prompt: `references/explorer-prompt.md` + specific angle
 3. After explorers return, one explainer:
    - `subagent_type`: `generalPurpose`
    - `readonly`: `true`
-   - `model`: `cursor-grok-4.5-high`
+   - `model`: `cursor-grok-4.6-high`
    - Prompt: `references/explainer-prompt.md` + all explorer findings
 
 ## Output format (explain)
@@ -71,7 +71,7 @@ Adapt sections to the question; skip empty ones.
 2. Spawn two critics in one message:
    - `subagent_type`: `generalPurpose`
    - `readonly`: `true`
-   - `model`: `composer-2.5` and `cursor-grok-4.5-high` (one each)
+   - `model`: `composer-2.5` and `cursor-grok-4.6-high` (one each)
    - Prompt: `references/critic-prompt.md` + explanation + file paths + `references/critique-rubric.md`
 3. Each critic returns: severity, claim, evidence, suggested bucket (Act / Consider / Noted / Dismissed).
 4. Orchestrator lead-judgment into those four buckets. **Not** the `session-auditor` / `audit-verifier` pipeline.

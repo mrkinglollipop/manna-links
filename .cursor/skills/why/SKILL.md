@@ -58,9 +58,9 @@ Spawn one investigator per **available** category (not empty theater):
 
 | Role | subagent_type | readonly | model |
 |------|---------------|----------|-------|
-| Investigators (git/gh, graph/memory/episodes) | `generalPurpose` | `true` | `cursor-grok-4.5-medium` |
-| Investigator (Notion MCP) | `generalPurpose` | `true` | `cursor-grok-4.5-medium` |
-| Synthesizer | `generalPurpose` | `true` | `cursor-grok-4.5-high` |
+| Investigators (git/gh, graph/memory/episodes) | `generalPurpose` | `true` | `cursor-grok-4.6-medium` |
+| Investigator (Notion MCP) | `generalPurpose` | `true` | `cursor-grok-4.6-medium` |
+| Synthesizer | `generalPurpose` | `true` | `cursor-grok-4.6-high` |
 
 **Notion MCP escape (narrow):** use `readonly: false` **only** when a Notion investigator Task fails because `readonly: true` strips required MCP reads — never for git/gh/graph/memory investigators or the synthesizer. Orchestrator must still dispatch with **mutation forbidden** (no Write tools; prompt must state read-only). Revert to `readonly: true` on retry when MCP works under readonly.
 

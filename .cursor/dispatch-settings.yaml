@@ -28,17 +28,17 @@ hosts:
       subagent_type: audit-verifier
       escape_type: generalPurpose
       prompt_from: .cursor/agents/audit-verifier.md
-      # omit = inherit parent; optional pin only per orchestration omit-first rules
-      model: omit
-      model_optional: cursor-grok-4.5-high
-      model_policy: omit_first
-      allow_models: [omit, cursor-grok-4.5-high]
+      # Cursor: pin xhigh required; high allowed if Task enum has it; omit denied
+      model: cursor-grok-4.6-xhigh
+      model_optional: cursor-grok-4.6-high
+      model_policy: pin_required
+      allow_models: [cursor-grok-4.6-xhigh, cursor-grok-4.6-high]
       deny_models: [composer-2.5, composer-2.5-fast, k3]
       confirm_readonly: true
       # fix: writable Task (no readonly)
     notes: |
       Enforced by task_model_allowlist hook when present.
-      Never bare grok-4.5-* or Grok *-fast on Cursor Task.
+      Never bare grok-4.5-* / grok-4.6-* or Grok *-fast on Cursor Task.
     iterate_finder:
       dispatch_tool: Task
       subagent_type: iterate-finder
@@ -74,7 +74,7 @@ hosts:
       escape_type: general-purpose
       prompt_from: .cursor/agents/session-auditor.md
       # HARD: omit — let Grok harness / config.toml / parent session decide.
-      # Do not pin grok-composer-*, grok-4.5, cursor-*, or composer-*.
+      # Do not pin grok-composer-*, grok-4.5, grok-4.6, cursor-*, or composer-*.
       model: omit
       model_policy: omit_always
       capability_mode: read-only
@@ -88,7 +88,7 @@ hosts:
       confirm_capability_mode: read-only
       fix_capability_mode: all
     notes: |
-      Grok runs harness defaults only. Parent model (often grok-4.5 via
+      Grok runs harness defaults only. Parent model (often grok-4.6 via
       subagents.models / session) applies when model is omitted.
       Do not import Cursor pin tables into Grok dispatches.
     iterate_finder:

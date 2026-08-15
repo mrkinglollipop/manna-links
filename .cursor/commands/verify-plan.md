@@ -44,7 +44,7 @@ Every dispatch for a round must include:
 
 **Pack once (speed):** compose the artifact pack **once per round** and paste the identical block into every dispatch that round — do not re-derive it per dispatch. Cap inline oracle log tails at ~40 lines each; do not inline plan file contents critics can read themselves — the plan file set paths are the reference.
 
-**Host dispatch (HARD):** resolve critic + adjudicator from **`.cursor/dispatch-settings.yaml`** for the active host (`cursor` | `grok` | `claude`). Same table as `/myauditandfix`: Cursor critics pin `composer-2.5`; adjudicator **omit-first** (optional `cursor-grok-4.5-high` only; never Composer/k3). **Grok/Claude omit model always** (harness default). Do not hardcode Cursor slugs into non-Cursor sessions.
+**Host dispatch (HARD):** resolve critic + adjudicator from **`.cursor/dispatch-settings.yaml`** for the active host (`cursor` | `grok` | `claude`). Same table as `/myauditandfix`: Cursor critics pin `composer-2.5`; adjudicator pin `cursor-grok-4.6-xhigh` (allow `cursor-grok-4.6-high`); never omit; never Composer; never k3 as adjudicator pin. **Grok/Claude: model omit always** (harness default). Do not hardcode Cursor slugs into non-Cursor sessions.
 
 ## Freshness pass (orchestrator — before dual critics on full re-audit)
 

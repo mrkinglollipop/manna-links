@@ -48,8 +48,8 @@ Every dispatch for a round must include:
 **Pack once, reference big blobs (speed):** compose the artifact pack **once per round** and paste the identical block into every dispatch that round — do not re-derive it per dispatch. Cap inline oracle log tails at ~40 lines each. Do not inline file contents critics can read themselves — the file set paths are the reference. When the prepr bundle's `audit_input`/`prompt` exceeds ~200 lines, write the full JSON to `/tmp/prepr_bundle_<fingerprint>.json` and attach inline only exit code, fingerprint, `scope_paths`, `files`, and that path — critics/verifier read the file.
 
 **Host dispatch (HARD):** resolve critic + adjudicator from **`.cursor/dispatch-settings.yaml`** for the active host (`cursor` | `grok` | `claude`) — that file is the SSOT for dispatch tool, types, models, and readonly/capability modes. Procedure is host-invariant; models/types/tools are not.
-- **cursor:** `Task`; critics pin `composer-2.5` + `readonly: true` (native `session-auditor`); adjudicator omit-first (optional `cursor-grok-4.5-high` only; never Composer/k3). Escape hatch when Task enum lacks the native type: `generalPurpose`/`explore` + read agent `.md`, same model rules.
-- **grok / claude:** **model omit always** (harness default) — do not pin `composer-*`, `cursor-grok-*`, `grok-composer-*`, or bare `grok-4.5`. Grok: `spawn_subagent` type `general-purpose` + agent `.md`; critic/confirm `capability_mode: read-only`, fix `all`. Claude: `Agent` + agent `.md`.
+- **cursor:** `Task`; critics pin `composer-2.5` + `readonly: true` (native `session-auditor`); adjudicator pin `cursor-grok-4.6-xhigh` (allow `cursor-grok-4.6-high`); never omit; never Composer; never k3 as adjudicator pin. Escape hatch when Task enum lacks the native type: `generalPurpose`/`explore` + read agent `.md`, same model rules.
+- **grok / claude:** **model omit always** (harness default) — do not pin `composer-*`, `cursor-grok-*`, `grok-composer-*`, or bare `grok-4.5` / `grok-4.6`. Grok: `spawn_subagent` type `general-purpose` + agent `.md`; critic/confirm `capability_mode: read-only`, fix `all`. Claude: `Agent` + agent `.md`.
 
 ## Freshness pass (orchestrator — before dual critics when applicable)
 
@@ -99,7 +99,7 @@ Do **not** edit files during this phase.
 4. **Dual critics (parallel):** dispatch two critics in one turn with **`TRACK=session`**, roles `bug_hunt` + `claim_bust`, using the **active host profile** from `dispatch-settings.yaml` (type, model policy, readonly/capability_mode, prompt_from):
    - `ROLE=bug_hunt` — correctness, regressions, edge cases, silent failures; **adversarial prepr lens** from prepare bundle (`audit_input` / `prompt`)
    - `ROLE=claim_bust` — chat claims vs evidence, false done, process gaps, **shared freshness items** (stale/false paths, outdated API/version claims, chat "verified" without evidence, scope creep vs thread intent, freshness failures), and **prepr bundle freshness** (fingerprint, scope_paths, session file set alignment)
-5. **Confirm-only verifier:** dispatch adjudicator with `fix_authorized=false`, **`TRACK=session`**, critic report(s) per mode — **full:** both bug_hunt + claim_bust; **`DELTA_CHECK` code:** delta bug_hunt + prepr prepare bundle; **`DELTA_CHECK` docs-only:** no critic reports — plus Freshness oracle notes. Use host profile for type/model/readonly (Cursor: Task `audit-verifier` + omit-first; Grok: `spawn_subagent` general-purpose + omit + read-only). Verifier confirms/rejects/dedupes and returns §4-ready payload.
+5. **Confirm-only verifier:** dispatch adjudicator with `fix_authorized=false`, **`TRACK=session`**, critic report(s) per mode — **full:** both bug_hunt + claim_bust; **`DELTA_CHECK` code:** delta bug_hunt + prepr prepare bundle; **`DELTA_CHECK` docs-only:** no critic reports — plus Freshness oracle notes. Use host profile for type/model/readonly (Cursor: Task `audit-verifier` pin `cursor-grok-4.6-xhigh`; Grok: `spawn_subagent` general-purpose + omit + read-only). Verifier confirms/rejects/dedupes and returns §4-ready payload.
 6. **Optional bugbot:** only when Matt opted in — fold into Findings; does not replace §4.1–§4.3.
 7. Orchestrator surfaces **mandatory report** to Matt in order (from verifier payload + synthesis):
    - **Action summary** (verdict, do now, blocked on Matt, plan status)
@@ -113,7 +113,7 @@ Do **not** edit files during this phase.
 
 ## Phase 2 — Fix (authorized by this command)
 
-1. Dispatch adjudicator with `fix_authorized=true`, **`TRACK=session`**, host-profile fix settings (Cursor: Task `audit-verifier` omit-first; Grok: `spawn_subagent` general-purpose, **model omit**, `capability_mode: all`), and the **confirmed finding list** from Phase 1 step 1 — fix **only** those findings; no scope creep.
+1. Dispatch adjudicator with `fix_authorized=true`, **`TRACK=session`**, host-profile fix settings (Cursor: Task `audit-verifier` pin `cursor-grok-4.6-xhigh`; Grok: `spawn_subagent` general-purpose, **model omit**, `capability_mode: all`), and the **confirmed finding list** from Phase 1 step 1 — fix **only** those findings; no scope creep.
 2. Orchestrator reviews diff + runs oracle gate. No LOC force-dispatch.
 3. Re-verify each fix via oracle/ledger updates only — **this is not a re-audit**. Fix-agent self-report (`NEW_HIGH_FROM_FIX`, clearance notes) is **input to post-fix mode selection only**; it does **not** authorize **Green: Y**, “zero HIGH/MEDIUM,” or ending the loop.
 

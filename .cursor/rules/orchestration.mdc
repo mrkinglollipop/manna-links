@@ -62,7 +62,7 @@ Detect host first (`cursor` | `grok` | `claude`). **Never apply Cursor pin table
 
 | Host | Audit critics | Audit adjudicator |
 |------|---------------|-------------------|
-| **cursor** | pin `composer-2.5` + readonly; native `session-auditor` when available | omit-first; optional `cursor-grok-4.5-high` only; never Composer/k3 |
+| **cursor** | pin `composer-2.5` + readonly; native `session-auditor` when available | pin `cursor-grok-4.6-xhigh` (allow `cursor-grok-4.6-high`); never omit; never Composer; never k3 as an adjudicator |
 | **grok** | **model omit always** — harness default; `spawn_subagent` + agent md | **model omit always**; confirm read-only / fix all |
 | **claude** | **model omit always** | **model omit always** |
 
@@ -71,17 +71,17 @@ Detect host first (`cursor` | `grok` | `claude`). **Never apply Cursor pin table
 When host is **cursor**, orchestrator may pin Task `model` **only** from Matt's allowlist:
 
 - `composer-2.5` · `composer-2.5-fast`
-- `cursor-grok-4.5-low` · `cursor-grok-4.5-medium` · `cursor-grok-4.5-high` · `cursor-grok-4.5-xhigh`
+- `cursor-grok-4.6-low` · `cursor-grok-4.6-medium` · `cursor-grok-4.6-high` · `cursor-grok-4.6-xhigh`
 - `k3` (Kimi — global Task allowlist when product exposes; **not** an adjudicator pin — never k3 as an adjudicator)
 
-**Effort = slug suffix** (Task has no separate `effort` field). Pick Grok effort by task hardness — light scout → `low`/`medium`; hard multi-step → `high`/`xhigh`. Do not default every pin to `xhigh`. Never bare `grok-4.5-*` (product remaps to Fast).
+**Effort = slug suffix** (Task has no separate `effort` field). Pick Grok effort by task hardness — light scout → `low`/`medium`; hard multi-step → `high`/`xhigh`. Do not default every pin to `xhigh`. Never bare `grok-4.5-*` / `grok-4.6-*` (product remaps to Fast).
 
-**Omit `model` is OK for non-audit agents when parent is known allowlisted** (`composer-2.5`, `composer-2.5-fast`, or `cursor-grok-4.5-*`; inherit parent otherwise). `composer-2.5-fast` is allowlisted; other `*-fast` (esp. Grok Fast remaps) are denied by `task_model_allowlist.py` (`preToolUse`). Off-list pins (Sonnet, GPT, Fable, bare `grok-4.5-*`, …) are denied.
+**Omit `model` is OK for non-audit agents when parent is known allowlisted** (`composer-2.5`, `composer-2.5-fast`, or `cursor-grok-4.6-*`; inherit parent otherwise). `composer-2.5-fast` is allowlisted; other `*-fast` (esp. Grok Fast remaps) are denied by `task_model_allowlist.py` (`preToolUse`). Off-list pins (Sonnet, GPT, Fable, bare `grok-4.5-*` / `grok-4.6-*`, …) are denied.
 
-**Must pin allowlisted model for browser/tool-schema-heavy Tasks when parent may be Moonshot/Kimi/Auto-unknown** (Grok or Composer; do not omit). Moonshot/Kimi can reject Cursor tool JSON Schema on inherit (`completed_subtitle.$ref` / `#/$defs/`). **Default light browser pin:** `cursor-grok-4.5-medium`. Prefer in-thread browser MCP (`cursor-ide-browser`) over a browser Task when available.
+**Must pin allowlisted model for browser/tool-schema-heavy Tasks when parent may be Moonshot/Kimi/Auto-unknown** (Grok or Composer; do not omit). Moonshot/Kimi can reject Cursor tool JSON Schema on inherit (`completed_subtitle.$ref` / `#/$defs/`). **Default light browser pin:** `cursor-grok-4.6-medium`. Prefer in-thread browser MCP (`cursor-ide-browser`) over a browser Task when available.
 
 **Audit pipeline carve-out (HARD) — resolve host first:**
-- **cursor:** `session-auditor` **must** pin `composer-2.5` (omit denied). `audit-verifier` allows **only** omit or `cursor-grok-4.5-high`. Hook `task_model_allowlist` enforces when present.
+- **cursor:** `session-auditor` **must** pin `composer-2.5` (omit denied). `audit-verifier` **must** pin `cursor-grok-4.6-xhigh` (allow `cursor-grok-4.6-high`; omit denied). Hook `task_model_allowlist` enforces when present.
 - **grok / claude:** **omit model on every audit dispatch** — do not pin Cursor slugs, `grok-composer-*`, or force a model; let the host harness default. Use types/capability_mode from `dispatch-settings.yaml`.
 
 **Agent frontmatter is separate** for non-audit specialists — prefer omit Task `model` when parent is known allowlisted. No new frontmatter pin campaign that overrides host dispatch-settings.
@@ -90,7 +90,7 @@ Kill switch (Cursor hook only): `touch /tmp/.cursor_task_model_allowlist_disable
 
 ## If a custom agent is invoked
 
-1. **Resolve host** via `dispatch-settings.yaml`. On **grok/claude**, omit model. On **cursor**, prefer omit when parent is known allowlisted — **except** audit critics (must pin per cursor profile). For cursor `audit-verifier`, omit-first.
+1. **Resolve host** via `dispatch-settings.yaml`. On **grok/claude**, omit model. On **cursor**, prefer omit when parent is known allowlisted — **except** audit critics and `audit-verifier` (must pin per cursor profile). For cursor `audit-verifier`, pin `cursor-grok-4.6-xhigh` (allow `cursor-grok-4.6-high`; omit denied).
 2. Custom `subagent_type` missing → host escape type + read `.cursor/agents/<name>.md` (escape hatch only). Escape hatch uses the **same host profile** model policy.
 
 ## Oracle (HARD)

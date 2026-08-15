@@ -24,7 +24,7 @@ Orchestrator-owned skill. Answer what else a named change could break, and prove
 
 1. Name the change and intended invariant.
 2. **Path-census (conduct 448):** whenever reporting path-audit **counts**, run five greps — literal path plus `.parent`, `parents[`, `$(dirname`, and `$VAR`-composed. Not only when paths move.
-3. Optional caller discovery: Task `explore` or `generalPurpose`, `readonly: true`, model `cursor-grok-4.5-medium` — not the sole path.
+3. Optional caller discovery: Task `explore` or `generalPurpose`, `readonly: true`, model `cursor-grok-4.6-medium` — not the sole path.
 4. Identify the single load-bearing safety fact.
 5. **Assess:** report without applying. **Prove:** run the oracle (cap 3).
 6. Report.
