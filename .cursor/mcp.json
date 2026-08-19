@@ -41,6 +41,12 @@
       "env": {
         "FIRECRAWL_API_KEY": "${env:FIRECRAWL_API_KEY}"
       }
+    },
+    "khipu-cloud": {
+      "url": "https://khipu.45-79-143-191.sslip.io/mcp",
+      "headers": {
+        "Authorization": "Bearer ${env:KHIPU_GATEWAY_TOKEN}"
+      }
     }
   }
 }
